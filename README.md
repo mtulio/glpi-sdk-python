@@ -1,6 +1,6 @@
 # glpi-sdk-python
 
-GLPI SDK writen in python.
+GLPI SDK written in Python.
 
 ## Description
 
