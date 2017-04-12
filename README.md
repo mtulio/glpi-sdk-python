@@ -4,10 +4,10 @@ GLPI SDK written in Python.
 
 ## Description
 
-This is a API SDK writen in Python to help developers integrate their apps, APIS
-and scripts in your GLPI infrastructure. This SDK abstract the [GLPI API Rest](https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md)
+This SDK is written in Python to help developers integrate their apps, APIS
+and scripts in GLPI infrastructure. This SDK abstract the [GLPI Rest API](https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md)
 
-To usage it, you should have username, password and API-Token for your GLPI
+To usage it, you should have username, password and API-Token from your GLPI
 server.
 
 See also:
@@ -15,7 +15,7 @@ See also:
 
 ## Install
 
-Just install using pip from:
+Just install using pip, from:
 
 * Repository:
 
@@ -54,7 +54,7 @@ print "Getting profile "
 print glpi_pfl.get_my_profiles()
 ```
 
-* Reusing sessions
+* Reusing session token
 
 ```python
 token_session = glpi_pfl.get_session_token()
