@@ -12,6 +12,6 @@ install:
 - pip install git+git://github.com/truly-systems/glpi-sdk-python.git#egg=glpi
 script:
 - sh tests/pylint.sh
-- py.test test --cov=glpi-sdk-python
-after_success:
-- codecov
+#- py.test test --cov=glpi-sdk-python
+#after_success:
+#- codecov
