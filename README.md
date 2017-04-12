@@ -19,12 +19,12 @@ Just install using pip from:
 
 * Repository:
 
-`pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#glpi`
+`pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi`
 
 * requirements.txt
 
 ```shell
-$ echo '-e git+https://github.com/truly-systems/glpi-sdk-python.git@master#glpi`'\
+$ echo '-e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi`'\
   > requirements.txt
 
 $ pip install -r requirements.txt
