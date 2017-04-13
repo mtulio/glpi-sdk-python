@@ -1,6 +1,6 @@
 # glpi-sdk-python
 
-[![Build Status](https://travis-ci.org/truly-systems/glpi-sdk-python.svg?branch=maste)](https://travis-ci.org/truly-systems/glpi-sdk-python)
+[![Build Status](https://travis-ci.org/truly-systems/glpi-sdk-python.svg?branch=master)](https://travis-ci.org/truly-systems/glpi-sdk-python)
 
 GLPI SDK written in Python.
 
