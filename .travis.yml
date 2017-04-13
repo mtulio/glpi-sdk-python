@@ -4,14 +4,8 @@ notifications:
   email: false
 python:
 - '2.7'
-before_install:
-- ! '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && openssl aes-256-cbc -K $encrypted_c3e85137836d_key -iv $encrypted_c3e85137836d_iv -in .env.enc -out .env -d || true'
 install:
-- pip install pylint
-- pip install codecov
+- make dependencies
 - pip install git+git://github.com/truly-systems/glpi-sdk-python.git#egg=glpi
 script:
-- sh tests/pylint.sh
-#- py.test test --cov=glpi-sdk-python
-#after_success:
-#- codecov
+- make check-syntax

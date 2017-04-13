@@ -14,4 +14,4 @@
 
 from .glpi import GlpiService
 from .glpi_profile import GlpiProfile
-from .glpi_ticket import GlpiTicket
+from .glpi_ticket import GlpiTicket, Ticket

@@ -32,7 +32,9 @@ $ pip install -r requirements.txt
 
 ## Usage
 
-* Tickets
+### Tickets
+
+* Get all Tickets
 
 ```python
 from glpi import GlpiTicket
@@ -42,7 +44,23 @@ glpi_ticket = GlpiTicket(url, glpi_app_token,
                          password=password)
 
 print "Retrieving all tickets: %s" %\
-       glpi_ticket.get_tickets()
+       glpi_ticket.get_all()
+```
+
+* Create an Ticket
+
+```python
+from glpi import GlpiTicket, Ticket
+
+glpi_ticket = GlpiTicket(url, glpi_app_token,
+                       username=username,
+                       password=password)
+
+ticket = Ticket(name='New ticket from SDK',
+                content='>>>> Content of ticket created by SDK API <<<')
+
+print "Creating ticket tickets: %s" % glpi_ticket.create(ticket_data=ticket)
+
 ```
 
 * Profile information
@@ -67,7 +85,7 @@ print "Update session for Ticket object: %s" %\
 
 ```python
 from glpi import GlpiProfile
-from glpi import GlpiTicket
+from glpi import GlpiTicket, Ticket
 
 
 username = "GLPI_USER"
@@ -78,7 +96,6 @@ glpi_app_token = "GLPI_API_TOKEN"
 
 if __name__ == '__main__':
 
-    # Get Profile
     glpi_pfl = GlpiProfile(url,
                 glpi_app_token, username=username,
                 password=password)
@@ -95,8 +112,12 @@ if __name__ == '__main__':
     print "Update Ticket object to session: %s" %\
             glpi_ticket.update_session_token(token_session)
 
+    ticket = Ticket(name='New ticket from SDK',
+                    content='>>>> Content of ticket created by SDK API <<<')
+
+    print "Creating ticket tickets: %s" % glpi_ticket.create(ticket_data=ticket)
 
     print "Retrieving all tickets: %s" %\
-            glpi_ticket.get_tickets()
+            glpi_ticket.get_all()
 
 ```

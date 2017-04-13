@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from .glpi import GlpiService
 
 
@@ -25,8 +26,6 @@ class GlpiProfile(GlpiService):
         GlpiService.__init__(
             self, url, app_token, username=username,
             password=password)
-
-        #self.version = version
 
     def get_my_profiles(self):
         """
