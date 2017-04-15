@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .glpi import GlpiService
-from .glpi_profile import GlpiProfile
-from .glpi_ticket import GlpiTicket
+from glpi import GlpiService
+from glpi_profile import GlpiProfile
+from glpi_ticket import GlpiTicket, Ticket

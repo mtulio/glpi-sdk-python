@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .glpi import GlpiService
+from glpi import GlpiService
 
 
 class GlpiProfile(GlpiService):
@@ -26,13 +26,10 @@ class GlpiProfile(GlpiService):
             self, url, app_token, username=username,
             password=password)
 
-        #self.version = version
-
     def get_my_profiles(self):
         """
         Returns profile entitie for user authenticated here.
         This is an example and no secure to be exposed. :)
         """
         response = self.request('GET', '/getMyProfiles/')
-        return json.dumps(response.json(),
-                          indent=4, separators=(',', ': '))
+        return response.json()

@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+#
 # GLPI API Rest documentation:
-## https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md
+# https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md
 
 import json as json_import
 import requests
@@ -47,10 +47,12 @@ def _remove_null_values(dictionary):
         return dict([(k, v) for k, v in dictionary.items() if v is not None])
     return dictionary
 
+
 def _cleanup_param_value(value):
     if isinstance(value, bool):
         return 'true' if value else 'false'
     return value
+
 
 def _cleanup_param_values(dictionary):
     if isinstance(dictionary, dict):
@@ -58,10 +60,11 @@ def _cleanup_param_values(dictionary):
             [(k, _cleanup_param_value(v)) for k, v in dictionary.items()])
     return dictionary
 
+
 class GlpiService(object):
     def __init__(self, url_apirest, token_app,
                  username=None, password=None, token_auth=None,
-                 use_vcap_services=False, vcap_services_name=None ):
+                 use_vcap_services=False, vcap_services_name=None):
         """
         [TODO] Loads credentials from the VCAP_SERVICES environment variable if
         available, preferring credentials explicitly set in the request.
@@ -100,13 +103,14 @@ class GlpiService(object):
                 if 'password' in self.vcap_service_credentials:
                     self.password = self.vcap_service_credentials['password']
                 if 'token_auth' in self.vcap_service_credentials:
-                    self.token_auth = self.vcap_service_credentials['token_auth']
+                    self.token_auth =\
+                        self.vcap_service_credentials['token_auth']
                 if 'app_token' in self.vcap_service_credentials:
                     self.app_token = self.vcap_service_credentials['app_token']
 
         if self.app_token is None:
             raise GlpiException(
-                'You must specify GLPI API-Token (app_token) to make API calls')
+                'You must specify GLPI API-Token(app_token) to make API calls')
 
         if (self.username is None or self.password is None)\
                 and self.token_auth is None:
@@ -138,18 +142,18 @@ class GlpiService(object):
         # URL should be like: http://glpi.example.com/apirest.php
         full_url = self.url + '/initSession'
 
-        headers = { "App-Token": self.app_token,
-                    "Content-Type" : "application/json" }
+        headers = {"App-Token": self.app_token,
+                   "Content-Type": "application/json"}
 
         auth = (self.username, self.password)
         r = requests.request('GET', full_url,
-                              auth=auth, headers=headers)
+                             auth=auth, headers=headers)
 
         try:
-           self.session = r.json()['session_token']
-           return True
+            self.session = r.json()['session_token']
+            return True
         except Exception as e:
-           raise Exception("Unable to init session against GLPI server: %s" % e)
+            raise Exception("Unable to init session in GLPI server: %s" % e)
 
         return False
 
@@ -172,10 +176,7 @@ class GlpiService(object):
 
         return self.session
 
-
-    """
-    Request
-    """
+    """ Request """
     # Could make this compute the label_id based on the variable name of the
     # dictionary passed in (using **kwargs), but
     # this might be confusing to understand.
@@ -222,7 +223,7 @@ class GlpiService(object):
         """ Make a request to GLPI Rest API """
 
         full_url = self.url + url
-        if self.session == None:
+        if self.session is None:
             new_session = True
 
         input_headers = _remove_null_values(headers) if headers else {}
@@ -235,12 +236,12 @@ class GlpiService(object):
 
         try:
             self.set_session_token()
-            headers.update({ 'Session-Token': self.session})
+            headers.update({'Session-Token': self.session})
         except Exception as e:
-            raise Exception("Unable to get Session token. Check errors: %s" % e)
+            raise Exception("Unable to get Session token. ERROR: %s" % e)
 
         if self.app_token is not None:
-            headers.update({ 'App-Token': self.app_token})
+            headers.update({'App-Token': self.app_token})
 
         headers.update(input_headers)
 
