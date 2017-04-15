@@ -18,10 +18,8 @@
 import json as json_import
 import requests
 import os
-import sys
-# from requests.structures import CaseInsensitiveDict
 
-# from .version import __version__
+from version import __version__
 
 
 def load_from_vcap_services(service_name):
@@ -62,7 +60,7 @@ def _cleanup_param_values(dictionary):
 
 
 class GlpiService(object):
-    def __init__(self, url_apirest, token_app,
+    def __init__(self, url_apirest, token_app, uri,
                  username=None, password=None, token_auth=None,
                  use_vcap_services=False, vcap_services_name=None):
         """
@@ -75,8 +73,10 @@ class GlpiService(object):
         password, or setup with Authorization HTTP token. If token_auth is set,
         username and password credentials must be ignored.
         """
+        self.__version__ = __version__
         self.url = url_apirest
         self.app_token = token_app
+        self.uri = uri
 
         self.username = username
         self.password = password
@@ -132,6 +132,9 @@ class GlpiService(object):
             token_auth = None
 
         self.token_auth = token_auth
+
+    def get_version(self):
+        return self.__version__
 
     """
     Session Token
@@ -235,7 +238,8 @@ class GlpiService(object):
             headers['accept'] = 'application/json'
 
         try:
-            self.set_session_token()
+            if self.session is None:
+                self.set_session_token()
             headers.update({'Session-Token': self.session})
         except Exception as e:
             raise Exception("Unable to get Session token. ERROR: %s" % e)
@@ -251,9 +255,6 @@ class GlpiService(object):
         json = _remove_null_values(json)
         data = _remove_null_values(data)
         files = _remove_null_values(files)
-
-        # if sys.version_info >= (3, 0) and isinstance(data, str):
-        #     data = data.encode('utf-8')
 
         response = requests.request(method=method, url=full_url,
                                     headers=headers, params=params,
@@ -281,3 +282,83 @@ class GlpiService(object):
             else:
                 error_message = self._get_error_message(response)
             raise GlpiException(error_message)
+
+    """ Generic Items methods """
+    def get_all(self):
+        res = self.request('GET', self.uri)
+        return res.json()
+
+    def get(self, item_id):
+        """ Return the JSON item with ID item_id. """
+        if isinstance(item_id, int):
+            uri = '/%s/%d' % (self.uri, item_id)
+            response = self.request('GET', uri)
+            return response.json()
+        else:
+            return {'error_message': 'Unale to get %s ID [%s]' % (self.uri,
+                                                                  item_id)}
+
+    def create(self, object_data):
+        """ Create an object Item. """
+
+        if (object_data is None):
+            return "{ 'error_message' : 'Object not found.'}"
+
+        payload = '{"input": { %s }}' % (object_data.get_stream())
+        response = self.request('POST', self.uri, data=payload,
+                                accept_json=True)
+
+        return response
+
+
+class GlpiItem(object):
+
+    def __init__(self, data={}):
+        self.data = data
+        self.null_str = "<DEFAULT_NULL>"
+
+    def get_data(self):
+        """ Returns entire Item data. """
+        return self.data
+
+    def get_attributes(self):
+        """ Returns entire Item data. """
+        return self.get_data()
+
+    def get_attribute(self, attr):
+        """ Returns an specific attribute. """
+        if attr in self.data:
+            return self.data[attr]
+
+    def set_attribute(self, attr, value):
+        """ Define the 'value' to an key. """
+        self.data[attr] = value
+
+    def set_attributes(self, attributes={}):
+        """ Define attributes to override defaults.  """
+        if attributes is {}:
+            self.data = {}
+            return self.data
+
+        for k in attributes:
+            if k in self.data.keys():
+                self.data[k] = attributes[k]
+            else:
+                self.data.update({k: attributes[k]})
+
+    def get_stream(self):
+        """ Get stream of data with format acceptable in GLPI API.  """
+
+        input_data = ""
+        for k in self.data:
+            if input_data is not "":
+                input_data = "%s," % input_data
+
+            if self.data[k] == self.null_str:
+                input_data = '%s "%s": null' % (input_data, k)
+            elif isinstance(self.data[k], str):
+                input_data = '%s "%s": "%s"' % (input_data, k, self.data[k])
+            else:
+                input_data = '%s "%s": %s' % (input_data, k, str(self.data[k]))
+
+        return input_data

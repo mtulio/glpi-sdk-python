@@ -15,6 +15,11 @@ server.
 See also:
 * [GLPI Rest API](https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md#list-searchoptions)
 
+## SDK supported items
+
+* Ticket: get, get all, create
+* Knowledge Base: get, get all, create
+
 ## Install
 
 Just install using pip, from:
@@ -47,7 +52,6 @@ url = 'http://glpi.example.com/apirest.php'
 glpi_app_token = "GLPI_API_TOKEN"
 
 ```
-
 
 ### Tickets
 

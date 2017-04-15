@@ -22,8 +22,10 @@ class GlpiProfile(GlpiService):
                  password=None):
         """ Construct an instance for Profile item. """
 
+        myuri = '/getMyProfiles/'
+
         GlpiService.__init__(
-            self, url, app_token, username=username,
+            self, url, app_token, myuri, username=username,
             password=password)
 
     def get_my_profiles(self):
@@ -31,5 +33,5 @@ class GlpiProfile(GlpiService):
         Returns profile entitie for user authenticated here.
         This is an example and no secure to be exposed. :)
         """
-        response = self.request('GET', '/getMyProfiles/')
+        response = self.request('GET', self.uri)
         return response.json()
