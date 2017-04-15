@@ -117,9 +117,10 @@ class GlpiTicket(GlpiService):
                  password):
         """ Construct an instance for Ticket item """
 
-        GlpiService.__init__(
-            self, url, app_token, username=username,
-            password=password)
+        uri = '/Ticket'
+
+        GlpiService.__init__(self, url, app_token, uri,
+                             username=username, password=password)
 
     """ CREATE """
     def create(self, name=None, content=None, ticket_data=None):
