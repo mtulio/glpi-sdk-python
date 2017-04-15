@@ -1,6 +1,6 @@
 PATH_VENV=tests/venv
+PATH_VENV_SETUP=$(PATH_VENV)-install
 PATH_REQUIREMENTS=tests/requirements.txt
-VENV_ACTIVATE=". $(PATH_VENV)/bin/activate"
 
 .PHONY: venv
 venv:
@@ -15,3 +15,13 @@ dependencies:
 .PHONY: check-syntax
 check-syntax:
 	. $(PATH_VENV)/bin/activate && pep8 *.py
+
+.PHONY: test-setup
+test-setup: clean
+	virtualenv $(PATH_VENV_SETUP);\
+	. $(PATH_VENV_SETUP)/bin/activate && pip install -e $(PWD)
+
+.PHONY: clean
+clean:
+	@if [ -d $(PATH_VENV) ]; then rm -rf $(PATH_VENV); fi
+	@if [ -d $(PATH_VENV_SETUP) ]; then rm -rf $(PATH_VENV_SETUP); fi

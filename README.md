@@ -34,6 +34,21 @@ $ pip install -r requirements.txt
 
 ## Usage
 
+You should enable the GLPI API and generate an App Token. TO create one follow these steps:
+
+* TODO
+
+Please, change the vars bellow with yours:
+
+```python
+username = "GLPI_USER"
+password = "GLPI_USER"
+url = 'http://glpi.example.com/apirest.php'
+glpi_app_token = "GLPI_API_TOKEN"
+
+```
+
+
 ### Tickets
 
 * Get all Tickets
@@ -45,8 +60,11 @@ glpi_ticket = GlpiTicket(url, glpi_app_token,
                          username=username,
                          password=password)
 
-print "Retrieving all tickets: %s" %\
-       glpi_ticket.get_all()
+tickets_all = glpi_ticket.get_all()
+print "Retrieving all tickets: %s" % json.dumps(tickets_all,
+                  indent=4,
+                  separators=(',', ': '),
+                  sort_keys=True)
 ```
 
 * Create an Ticket
@@ -61,7 +79,27 @@ glpi_ticket = GlpiTicket(url, glpi_app_token,
 ticket = Ticket(name='New ticket from SDK',
                 content='>>>> Content of ticket created by SDK API <<<')
 
-print "Creating ticket tickets: %s" % glpi_ticket.create(ticket_data=ticket)
+ticket_dict = glpi_ticket.create(ticket_data=ticket)
+print "Created the ticket: %s" % ticket_dict
+
+```
+
+* Get ticket by ID
+
+```python
+from glpi import GlpiTicket, Ticket
+
+glpi_ticket = GlpiTicket(url, glpi_app_token,
+                       username=username,
+                       password=password)
+
+ticket_dict = {}
+ticket_dict['id'] = 1
+ticket_get = glpi_ticket.get(ticket_dict['id'])
+print "Got this ticket: %s" % json.dumps(ticket_get,
+                  indent=4,
+                  separators=(',', ': '),
+                  sort_keys=True)
 
 ```
 
@@ -70,8 +108,13 @@ print "Creating ticket tickets: %s" % glpi_ticket.create(ticket_data=ticket)
 ```python
 from glpi import GlpiProfile
 
+glpi_pfl = GlpiProfile(url,
+            glpi_app_token, username=username,
+            password=password)
+
 print "Getting profile "
-print glpi_pfl.get_my_profiles()
+print json.dumps(glpi_pfl.get_my_profiles(),
+               indent=4, separators=(',', ': '))
 ```
 
 * Reusing session token
@@ -98,28 +141,56 @@ glpi_app_token = "GLPI_API_TOKEN"
 
 if __name__ == '__main__':
 
-    glpi_pfl = GlpiProfile(url,
-                glpi_app_token, username=username,
-                password=password)
+  glpi_pfl = GlpiProfile(url,
+              glpi_app_token, username=username,
+              password=password)
 
-    print "Getting profile "
-    print glpi_pfl.get_my_profiles()
+  print "Getting profile "
+  print json.dumps(glpi_pfl.get_my_profiles(),
+                   indent=4, separators=(',', ': '))
 
-    token_session = glpi_pfl.get_session_token()
-    print "Current session is: %s" % token_session
-    glpi_ticket = GlpiTicket(url, glpi_app_token,
-                             username=username,
-                             password=password)
+  token_session = glpi_pfl.get_session_token()
+  print "Current session is: %s" % token_session
 
-    print "Update Ticket object to session: %s" %\
-            glpi_ticket.update_session_token(token_session)
+  glpi_ticket = GlpiTicket(url, glpi_app_token,
+                           username=username,
+                           password=password)
 
-    ticket = Ticket(name='New ticket from SDK',
-                    content='>>>> Content of ticket created by SDK API <<<')
+  print "Update Ticket object to session: %s" %\
+          glpi_ticket.update_session_token(token_session)
 
-    print "Creating ticket tickets: %s" % glpi_ticket.create(ticket_data=ticket)
+  tickets_all = glpi_ticket.get_all()
+  print "Retrieving all tickets: %s" % json.dumps(tickets_all,
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
 
-    print "Retrieving all tickets: %s" %\
-            glpi_ticket.get_all()
+  ticket = Ticket(name='New ticket from SDK',
+                  content=' Content of ticket created by SDK API ')
+  ticket_dict = glpi_ticket.create(ticket_data=ticket)
+  print "Created the ticket: %s" % ticket_dict
+
+  print "Getting ticket recently created with id %d ..." % ticket_dict['id']
+  ticket_get = glpi_ticket.get(ticket_dict['id'])
+  print "Got this ticket: %s" % json.dumps(ticket_get,
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
 
 ```
+
+## CONTRIBUTING
+
+### TEST the code
+
+* Install tests dependencies
+
+`make dependencies`
+
+* Test PEP syntax
+
+`make check-syntax`
+
+* Test installation setup
+
+`make test-setup`

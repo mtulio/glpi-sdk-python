@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-from .glpi import GlpiService, GlpiInvalidArgument
+from glpi import GlpiService, GlpiInvalidArgument
 
 
 class Ticket(object):
@@ -134,25 +133,27 @@ class GlpiTicket(GlpiService):
             ticket = Ticket(name, content)
 
         payload = '{"input": { %s }}' % (ticket.get_stream())
-        response = self.request('POST', '/Ticket', data=payload
+        response = self.request('POST', '/Ticket', data=payload,
                                 accept_json=True)
 
-        return json.dumps(response,
-                          indent=4,
-                          separators=(',', ': '),
-                          sort_keys=True)
+        return response
 
     """ GET """
-    def get_all(self):
-        """ Returns lsit of tickets. """
-        response = self.request('GET', '/Ticket')
-        return json.dumps(response.json(),
-                          indent=4,
-                          separators=(',', ': '),
-                          sort_keys=True)
+    def get(self, item_id):
+        """ Return the JSON with Ticket item with ID item_id. """
+        if isinstance(item_id, int):
+            uri = '/Ticket/%d' % item_id
+            response = self.request('GET', uri)
+            return response.json()
+        else:
+            return {'message': 'Unale to get the Ticket ID [%s]' % item_id}
 
-    """ GET TODO
-    get_by_id()
+    def get_all(self):
+        """ Returns an JSON with the list of tickets. """
+        response = self.request('GET', '/Ticket')
+        return response.json()
+
+    """ TODO:
     get_by_name()
     search_by_key()
     """

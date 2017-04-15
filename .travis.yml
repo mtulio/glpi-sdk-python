@@ -9,3 +9,4 @@ install:
 - pip install git+git://github.com/truly-systems/glpi-sdk-python.git#egg=glpi
 script:
 - make check-syntax
+- make test-setup

@@ -148,6 +148,7 @@ class GlpiService(object):
         auth = (self.username, self.password)
         r = requests.request('GET', full_url,
                              auth=auth, headers=headers)
+
         try:
             self.session = r.json()['session_token']
             return True
