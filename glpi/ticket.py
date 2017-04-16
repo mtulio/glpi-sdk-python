@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from glpi import GlpiService, GlpiInvalidArgument
+from glpi import GlpiService, GlpiInvalidArgument, GlpiItem
 
 
-class Ticket(object):
+class Ticket(GlpiItem):
     """ Object of Item Ticket """
 
     def __init__(self, name=None, content=None, attributes={}):
@@ -23,15 +23,16 @@ class Ticket(object):
         Construct an item Ticket.
         TODO: data could be loaded from an defaults file (JSON, CSV, ...)
         """
-        self.null = '<DEFAULT_VALUE>'
-        self.data = {
+        GlpiItem.__init__(self, {})
+
+        defaults = {
             "name": "<DEFAULT_VALUE>",
             "content": "<DEFAULT_VALUE>",
             "actiontime": 0,
-            "begin_waiting_date": self.null,
+            "begin_waiting_date": self.null_str,
             "close_delay_stat": 0,
-            "closedate": self.null,
-            "due_date": self.null,
+            "closedate": self.null_str,
+            "due_date": self.null_str,
             "entities_id": 0,
             "global_validation": 1,
             "impact": 3,
@@ -42,13 +43,13 @@ class Ticket(object):
             "sla_waiting_duration": 0,
             "slts_tto_id": 0,
             "slts_ttr_id": 0,
-            "solution": self.null,
+            "solution": self.null_str,
             "solutiontypes_id": 0,
             "solve_delay_stat": 0,
-            "solvedate": self.null,
+            "solvedate": self.null_str,
             "status": 1,
             "takeintoaccount_delay_stat": 0,
-            "time_to_own": self.null,
+            "time_to_own": self.null_str,
             "ttr_slalevels_id": 0,
             "type": 1,
             "urgency": 3,
@@ -57,57 +58,18 @@ class Ticket(object):
             "validation_percent": 0,
             "waiting_duration": 0
         }
+        self.set_attributes(attributes=defaults)
 
         if name is None or content is None:
             raise GlpiInvalidArgument(
                 'Cannot open a ticket without Name and Content data')
         else:
-            self.set_name_and_content(name, content)
+            """ Define name and content, required to every new one ticket.  """
+            self.set_attribute('name', name)
+            self.set_attribute('content', content)
 
         if attributes is not {}:
             self.set_attributes(attributes)
-
-    def get_data(self):
-        """ Returns entire Item data.  """
-        return self.data
-
-    def get_attr(self, attr):
-        """ Returns an specific attribute.  """
-        return self.data[attr]
-
-    def set_name_and_content(self, name, content):
-        """ Define name and content, required to every new one ticket.  """
-        self.data.update({'name': name})
-        self.data.update({'content': content})
-
-    def set_attributes(self, attributes={}):
-        """ Define attributes to override defaults.  """
-        if attributes is {}:
-            return
-
-        for k in attributes:
-            if k in self.data.keys():
-                self.data[k] = attributes[k]
-            else:
-                self.data.update({k: attributes[k]})
-
-    def get_stream(self):
-        """ Get stream of data with format acceptable in GLPI API.  """
-
-        input_data = ""
-        null_str = self.null
-        for k in self.data:
-            if input_data is not "":
-                input_data = "%s," % input_data
-
-            if self.data[k] == null_str:
-                input_data = '%s "%s": null' % (input_data, k)
-            elif isinstance(self.data[k], str):
-                input_data = '%s "%s": "%s"' % (input_data, k, self.data[k])
-            else:
-                input_data = '%s "%s": %s' % (input_data, k, str(self.data[k]))
-
-        return input_data
 
 
 class GlpiTicket(GlpiService):
@@ -123,36 +85,23 @@ class GlpiTicket(GlpiService):
                              username=username, password=password)
 
     """ CREATE """
-    def create(self, name=None, content=None, ticket_data=None):
+    def new(self, name=None, content=None, ticket_data=None):
+        """
+        This is wrapper of polymorphic create() method.
+        new() will called when an object Ticket is not create with name set up.
+        In general we advise to use create().
+        """
+
         if (name is None or content is None) and ticket_data is None:
             return "{ 'error_message' : 'Name or content not found.'}"
 
         ticket = None
-        if ticket_data is not None:
-            ticket = ticket_data
-        else:
+        if ticket_data is None:
             ticket = Ticket(name, content)
-
-        payload = '{"input": { %s }}' % (ticket.get_stream())
-        response = self.request('POST', '/Ticket', data=payload,
-                                accept_json=True)
-
-        return response
-
-    """ GET """
-    def get(self, item_id):
-        """ Return the JSON with Ticket item with ID item_id. """
-        if isinstance(item_id, int):
-            uri = '/Ticket/%d' % item_id
-            response = self.request('GET', uri)
-            return response.json()
         else:
-            return {'message': 'Unale to get the Ticket ID [%s]' % item_id}
+            ticket = ticket_data
 
-    def get_all(self):
-        """ Returns an JSON with the list of tickets. """
-        response = self.request('GET', '/Ticket')
-        return response.json()
+        return self.create(ticket)
 
     """ TODO:
     get_by_name()

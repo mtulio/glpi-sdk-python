@@ -318,11 +318,11 @@ class GlpiItem(object):
         self.null_str = "<DEFAULT_NULL>"
 
     def get_data(self):
-        """ Returns entire Item data. """
+        """ Returns entire attributes of Item data. """
         return self.data
 
     def get_attributes(self):
-        """ Returns entire Item data. """
+        """ Return an specific attribute of Item data. """
         return self.get_data()
 
     def get_attribute(self, attr):
@@ -337,7 +337,6 @@ class GlpiItem(object):
     def set_attributes(self, attributes={}):
         """ Define attributes to override defaults.  """
         if attributes is {}:
-            self.data = {}
             return self.data
 
         for k in attributes:
@@ -345,6 +344,11 @@ class GlpiItem(object):
                 self.data[k] = attributes[k]
             else:
                 self.data.update({k: attributes[k]})
+
+    def unset_attributes(self):
+        """ Clean all attributes. """
+        self.data = {}
+        return self.data
 
     def get_stream(self):
         """ Get stream of data with format acceptable in GLPI API.  """

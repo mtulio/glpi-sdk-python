@@ -49,8 +49,8 @@ def test_ticket():
 
     ticket = Ticket(name="New ticket from SDK %s" % t,
                     content=" Content of ticket created by SDK API  %s" % t)
-    ticket_dict = glpi_ticket.create(ticket_data=ticket)
-    print "Created the ticket: %s" % ticket_dict
+    ticket_dict = glpi_ticket.create(ticket)
+    print "Created the ticket polymorphism: %s" % ticket_dict
 
     print "Getting ticket recently created with id %d ..." % ticket_dict['id']
     ticket_get = glpi_ticket.get(ticket_dict['id'])
