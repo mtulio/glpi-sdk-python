@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from glpi import GlpiService
-from glpi_profile import GlpiProfile
-from glpi_ticket import GlpiTicket, Ticket
-from glpi_knowbase import GlpiKnowBase, KnowBase
+from .version import __version__
+from .profile import GlpiProfile
+from .knowbase import GlpiKnowBase
+from .knowbase import KnowBase
+from .ticket import GlpiTicket
+from .ticket import Ticket

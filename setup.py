@@ -1,24 +1,22 @@
-"""A setuptools based setup module. """
-
-# Always prefer setuptools over distutils
 from setuptools import setup, find_packages
-
 from codecs import open
 from os import path
 
-here = path.abspath(path.dirname(__file__))
+def readme():
+    here = path.abspath(path.dirname(__file__))
+    with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+        return f.read()
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+exec (open('glpi/version.py').read())
 
 setup(
     name='glpi',
-    version='0.1.0',
+    version=__version__,
     description='GLPI Python SDK',
-    long_description=long_description,
+    long_description=readme(),
     url='https://github.com/truly-systems/glpi-sdk-python',
-    author='The Python Packaging Authority',
-    author_email='marco.tulio@predict-systems.com',
+    author='Marco Tulio R Braga',
+    author_email='braga@mtulio.eng.br',
     license='Apache-2.0',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -26,7 +24,10 @@ setup(
         'License :: OSI Approved :: Apache-2.0 License',
         'Programming Language :: Python :: 2.7',
     ],
-    keywords='GLPI SDK for developers',
+    keywords='GLPI SDK Library',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['requests'],
+    #packages = ["glpi"],
+    install_requires=[
+        'requests',
+    ]
 )
