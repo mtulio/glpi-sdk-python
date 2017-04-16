@@ -1,6 +1,7 @@
 # Custom ignore
-tests/venv-install/
-tests/test_glpi_module.py
+tests/venv-*
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
