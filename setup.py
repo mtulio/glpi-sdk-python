@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
+
 def readme():
     here = path.abspath(path.dirname(__file__))
     with open(path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -25,8 +26,7 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     keywords='GLPI SDK Library',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    #packages = ["glpi"],
+    packages=["glpi"],
     install_requires=[
         'requests',
     ]

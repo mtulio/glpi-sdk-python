@@ -11,13 +11,14 @@ venv:
 dependencies:
 	@if [ ! -d $(PATH_VENV) ]; then virtualenv $(PATH_VENV) ; fi
 	. $(PATH_VENV)/bin/activate && pip install -r $(PATH_REQUIREMENTS)
+	. $(PATH_VENV)/bin/activate && pip install --no-cache-dir -e $(PWD)
 
 .PHONY: check-syntax
 check-syntax:
 	. $(PATH_VENV)/bin/activate && pep8 *.py
 
 .PHONY: test-setup
-test-setup:
+test-setup: clean
 	@if [ ! -d $(PATH_VENV_SETUP) ]; then virtualenv $(PATH_VENV_SETUP); fi
 	. $(PATH_VENV_SETUP)/bin/activate && pip install --no-cache-dir -e $(PWD)
 
