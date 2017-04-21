@@ -342,6 +342,13 @@ class GlpiService(object):
 
         return response
 
+    def search_options(self, item_name):
+
+        new_uri = "%s/%s" % (self.uri, item_name)
+        response = self.request('GET', new_uri, accept_json=True)
+
+        return response
+
 
 class GlpiItem(object):
     """ Polymorphic class of GLPI Item object. """
@@ -422,6 +429,7 @@ class GLPI(object):
         self.item_map = {
             "ticket": "/Ticket",
             "knowbase": "/knowbaseitem",
+            "listSearchOptions": "/listSearchOptions",
         }
         self.api_rest = None
         self.api_session = None
@@ -504,3 +512,9 @@ class GLPI(object):
             return {"message_error": "Unable to create an Item in GLPI Server."}
 
         return self.api_rest.create(item_data)
+
+    def search_options(self, item_name):
+        if not self.init_item('listSearchOptions'):
+            return {"message_error": "Unable to create an Item in GLPI Server."}
+
+        return self.api_rest.search_options(item_name)

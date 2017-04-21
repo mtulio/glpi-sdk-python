@@ -175,6 +175,24 @@ def test_general():
                      separators=(',', ': '),
                      sort_keys=True)
 
+def test_general_search():
+    glpi = GLPI(url, glpi_app_token, (username, password))
+
+    print "#> Getting help()"
+    print glpi.help_item()
+
+    print glpi.init_item('listSearchOptions')
+
+    token_session = glpi.api_session
+    print ">>>> Current session is: %s" % token_session
+
+    print "#> Getting search options"
+    print json.dumps(glpi.search_options('knowbaseitem'),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+
+
 if __name__ == '__main__':
 
     vcap_service_credentials = load_from_vcap_services('glpi')
@@ -195,6 +213,7 @@ if __name__ == '__main__':
     t = time.strftime("%Y/%m/%d-%H:%M:%S")
 
     # test_profile()
-    test_ticket()
+    # test_ticket()
     # test_kb()
-    test_general()
+    # test_general()
+    test_general_search()
