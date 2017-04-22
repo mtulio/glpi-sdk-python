@@ -518,3 +518,37 @@ class GLPI(object):
             return {"message_error": "Unable to create an Item in GLPI Server."}
 
         return self.api_rest.search_options(item_name)
+
+    def search_criteria(self, data, criteria):
+        """ Search in data some criteria """
+        result = []
+        for d in data:
+            find = False
+            for c in criteria:
+                if c['value'].lower() in d[c['field']].lower():
+                    find = True
+            if find:
+                result.append(d)
+        return result
+
+    def search_metacriteria(self, metacriteria):
+        """ TODO: Search in metacriteria in source Item """
+        return {"message_info": "Not implemented yet"}
+
+    def search(self, item_name, criteria):
+        """
+        Return an Item with that matchs with criteria
+        criteria: [
+            {
+                "field": "name",
+                "value": "search value"
+            }
+        ]
+        """
+        if criteria.has_key('criteria'):
+            data = self.get_all(item_name)
+            return self.search_criteria(data, criteria['criteria'])
+        elif criteria.has_key('metacriteria'):
+            return self.search_metacriteria(criteria['metacriteria'])
+        else:
+            return {"message_error": "Unable to find a valid criteria."}

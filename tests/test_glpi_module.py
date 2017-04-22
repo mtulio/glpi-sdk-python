@@ -13,7 +13,6 @@ load_dotenv(find_dotenv())
 
 def load_from_vcap_services(service_name):
     vcap_services = os.getenv("VCAP_SERVICES")
-    print repr(vcap_services)
     if vcap_services is not None:
         services = json.loads(vcap_services)
         if service_name in services:
@@ -102,7 +101,7 @@ def test_kb():
                       separators=(',', ': '),
                       sort_keys=True)
 
-    kb_dict = kb_item.create(kb2)
+    kb_dict = kb_item.create(kb2.get_data())
     print "Creating: %s " % kb_dict
 
 
@@ -192,6 +191,20 @@ def test_general_search():
                       separators=(',', ': '),
                       sort_keys=True)
 
+    # item_search = [ { "link": 'AND', "itemtype": 'knowbaseitem', "field": 6,
+    # "searchtype": 'contains', "value": 'portal' },
+
+
+def test_search():
+
+    glpi = GLPI(url, glpi_app_token, (username, password))
+
+    criteria = {"criteria": [{"field": "name", "value":"portal"}]}
+    print "#> Searching an str(valud) in KBs"
+    print json.dumps(glpi.search('knowbase', criteria),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
 
 if __name__ == '__main__':
 
@@ -214,6 +227,7 @@ if __name__ == '__main__':
 
     # test_profile()
     # test_ticket()
-    # test_kb()
+    #test_kb()
     # test_general()
-    test_general_search()
+    #test_general_search()
+    test_search()
