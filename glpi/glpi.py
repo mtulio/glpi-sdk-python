@@ -17,6 +17,7 @@
 
 import json as json_import
 import requests
+from requests.structures import CaseInsensitiveDict
 import os
 
 from version import __version__
@@ -30,14 +31,6 @@ def load_from_vcap_services(service_name):
             return services[service_name][0]["credentials"]
     else:
         return None
-
-
-class GlpiException(Exception):
-    pass
-
-
-class GlpiInvalidArgument(GlpiException):
-    pass
 
 
 def _remove_null_values(dictionary):
@@ -59,7 +52,17 @@ def _cleanup_param_values(dictionary):
     return dictionary
 
 
+class GlpiException(Exception):
+    pass
+
+
+class GlpiInvalidArgument(GlpiException):
+    pass
+
+
 class GlpiService(object):
+    """ Polymorphic class of GLPI REST API Service. """
+
     def __init__(self, url_apirest, token_app, uri,
                  username=None, password=None, token_auth=None,
                  use_vcap_services=False, vcap_services_name=None):
@@ -133,6 +136,9 @@ class GlpiService(object):
 
         self.token_auth = token_auth
 
+    def set_uri(self, uri):
+        self.uri = uri
+
     def get_version(self):
         return self.__version__
 
@@ -144,11 +150,16 @@ class GlpiService(object):
 
         # URL should be like: http://glpi.example.com/apirest.php
         full_url = self.url + '/initSession'
+        auth = None
 
         headers = {"App-Token": self.app_token,
                    "Content-Type": "application/json"}
 
-        auth = (self.username, self.password)
+        if self.token_auth is not None:
+            auth = self.token_auth
+        else:
+            auth = (self.username, self.password)
+
         r = requests.request('GET', full_url,
                              auth=auth, headers=headers)
 
@@ -231,8 +242,8 @@ class GlpiService(object):
 
         input_headers = _remove_null_values(headers) if headers else {}
 
-        # headers = CaseInsensitiveDict(
-        #     {'user-agent': 'glpi-sdk-python-' + __version__})
+        headers = CaseInsensitiveDict(
+             {'user-agent': 'glpi-sdk-python-' + __version__})
 
         if accept_json:
             headers['accept'] = 'application/json'
@@ -283,13 +294,34 @@ class GlpiService(object):
                 error_message = self._get_error_message(response)
             raise GlpiException(error_message)
 
+    def get_payload(self, data_req):
+        """ Extract payload for REST API from JSON data. """
+
+        data_str = ""
+        null_str = "<DEFAULT_NULL>"
+        for k in data_req:
+            if data_str is not "":
+                data_str = "%s," % data_str
+
+            if data_req[k] == null_str:
+                data_str = '%s "%s": null' % (data_str, k)
+            elif isinstance(data_req[k], str):
+                data_str = '%s "%s": "%s"' % (data_str, k, data_req[k])
+            else:
+                data_str = '%s "%s": %s' % (data_str, k, str(data_req[k]))
+
+        return data_str
+
     """ Generic Items methods """
     def get_all(self):
+        """ Return all content of Item in JSON format. """
+
         res = self.request('GET', self.uri)
         return res.json()
 
     def get(self, item_id):
         """ Return the JSON item with ID item_id. """
+
         if isinstance(item_id, int):
             uri = '/%s/%d' % (self.uri, item_id)
             response = self.request('GET', uri)
@@ -304,14 +336,22 @@ class GlpiService(object):
         if (object_data is None):
             return "{ 'error_message' : 'Object not found.'}"
 
-        payload = '{"input": { %s }}' % (object_data.get_stream())
+        payload = '{"input": { %s }}' % (self.get_payload(object_data))
         response = self.request('POST', self.uri, data=payload,
                                 accept_json=True)
 
         return response
 
+    def search_options(self, item_name):
+
+        new_uri = "%s/%s" % (self.uri, item_name)
+        response = self.request('GET', new_uri, accept_json=True)
+
+        return response
+
 
 class GlpiItem(object):
+    """ Polymorphic class of GLPI Item object. """
 
     def __init__(self, data={}):
         self.data = data
@@ -352,7 +392,6 @@ class GlpiItem(object):
 
     def get_stream(self):
         """ Get stream of data with format acceptable in GLPI API.  """
-
         input_data = ""
         for k in self.data:
             if input_data is not "":
@@ -366,3 +405,150 @@ class GlpiItem(object):
                 input_data = '%s "%s": %s' % (input_data, k, str(self.data[k]))
 
         return input_data
+
+
+class GLPI(object):
+
+    """
+    Generic implementation of GLPI Items can manage all
+    Itens in one GLPI server connection.
+    We can use this class to save implementation of "new classes" and
+    can reuse API sessions.
+    To support new items you should create the dict key/value in item_map.
+    """
+
+    def __init__(self, url, app_token, auth_token,
+                 item_map=None):
+        """ Construct generic object """
+
+        self.url = url
+        self.app_token = app_token
+        self.auth_token = auth_token
+
+        self.item_uri = None
+        self.item_map = {
+            "ticket": "/Ticket",
+            "knowbase": "/knowbaseitem",
+            "listSearchOptions": "/listSearchOptions",
+        }
+        self.api_rest = None
+        self.api_session = None
+
+        if item_map is not None:
+            self.set_item_map(item_map)
+
+    def help_item(self):
+        """ Help item values """
+        return {"available_items": self.item_map}
+
+    def set_item(self, item_name):
+        """ Define an item to object """
+        self.item_uri = self.item_map[item_name]
+
+    def set_item_map(self, item_map={}):
+        """ Set an custom item_map. """
+        self.item_map = item_map
+
+    def set_api_uri(self):
+        """
+        Update URI in Service API object.
+        We should do this every new Item requested.
+        """
+        self.api_rest.set_uri(self.item_uri)
+
+    def init_api(self):
+        """ Initialize the API Rest connection """
+        if self.item_uri is None:
+            return {"message_error": "Please use set_item() before init API."}
+
+        self.api_rest = GlpiService(self.url, self.app_token,
+                                    self.item_uri, token_auth=self.auth_token)
+
+        self.api_session = self.api_rest.get_session_token()
+
+        if self.api_session is not None:
+            return {"session_token": self.api_session}
+        else:
+            return {"message_error": "Unable to InitSession in GLPI Server."}
+
+    def init_item(self, item_name):
+        """ Initialize an Item context. """
+        update_api = False
+
+        if self.item_uri != self.item_map[item_name]:
+            self.set_item(item_name)
+            update_api = True
+
+        if self.api_rest is None:
+            try:
+                self.init_api()
+            except:
+                print "message_error: Unable to InitSession in GLPI Server."
+                return False
+
+        if update_api:
+            self.set_api_uri()
+
+        return True
+
+    # Itens operations
+    def get_all(self, item_name):
+        """ Get all resources from item_name """
+        if not self.init_item(item_name):
+            return {"message_error": "Unable to get Item in GLPI Server."}
+
+        return self.api_rest.get_all()
+
+    def get(self, item_name, item_id):
+        """ Get item_name resource by ID """
+        if not self.init_item(item_name):
+            return {"message_error": "Unable to get Item by ID in GLPI Server."}
+
+        return self.api_rest.get(item_id)
+
+    def create(self, item_name, item_data):
+        """ Create an Resource Item """
+        if not self.init_item(item_name):
+            return {"message_error": "Unable to create an Item in GLPI Server."}
+
+        return self.api_rest.create(item_data)
+
+    def search_options(self, item_name):
+        if not self.init_item('listSearchOptions'):
+            return {"message_error": "Unable to create an Item in GLPI Server."}
+
+        return self.api_rest.search_options(item_name)
+
+    def search_criteria(self, data, criteria):
+        """ Search in data some criteria """
+        result = []
+        for d in data:
+            find = False
+            for c in criteria:
+                if c['value'].lower() in d[c['field']].lower():
+                    find = True
+            if find:
+                result.append(d)
+        return result
+
+    def search_metacriteria(self, metacriteria):
+        """ TODO: Search in metacriteria in source Item """
+        return {"message_info": "Not implemented yet"}
+
+    def search(self, item_name, criteria):
+        """
+        Return an Item with that matchs with criteria
+        criteria: [
+            {
+                "field": "name",
+                "value": "search value"
+            }
+        ]
+        """
+        if criteria.has_key('criteria'):
+            data = self.get_all(item_name)
+            return self.search_criteria(data, criteria['criteria'])
+        elif criteria.has_key('metacriteria'):
+            return self.search_metacriteria(criteria['metacriteria'])
+        else:
+            return {"message_error": "Unable to find a valid criteria."}

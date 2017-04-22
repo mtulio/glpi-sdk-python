@@ -7,12 +7,12 @@ from dotenv import load_dotenv, find_dotenv
 from glpi import GlpiProfile
 from glpi import GlpiTicket, Ticket
 from glpi import GlpiKnowBase, KnowBase
+from glpi import GLPI
 
 load_dotenv(find_dotenv())
 
 def load_from_vcap_services(service_name):
     vcap_services = os.getenv("VCAP_SERVICES")
-    print repr(vcap_services)
     if vcap_services is not None:
         services = json.loads(vcap_services)
         if service_name in services:
@@ -38,7 +38,7 @@ def test_ticket():
                              username=username,
                              password=password)
 
-    print "Update Ticket object to session: %s" %\
+    print "##> Update Ticket object to session: %s" %\
             glpi_ticket.update_session_token(token_session)
 
     tickets_all = glpi_ticket.get_all()
@@ -49,8 +49,8 @@ def test_ticket():
 
     ticket = Ticket(name="New ticket from SDK %s" % t,
                     content=" Content of ticket created by SDK API  %s" % t)
-    ticket_dict = glpi_ticket.create(ticket)
-    print "Created the ticket polymorphism: %s" % ticket_dict
+    ticket_dict = glpi_ticket.create(ticket.get_data())
+    print "Created the ticket: %s" % ticket_dict
 
     print "Getting ticket recently created with id %d ..." % ticket_dict['id']
     ticket_get = glpi_ticket.get(ticket_dict['id'])
@@ -101,9 +101,110 @@ def test_kb():
                       separators=(',', ': '),
                       sort_keys=True)
 
-    kb_dict = kb_item.create(kb2)
+    kb_dict = kb_item.create(kb2.get_data())
     print "Creating: %s " % kb_dict
 
+
+def test_general():
+
+    # Basic usage
+    glpi = GLPI(url, glpi_app_token, (username, password))
+
+    print "#> Getting help()"
+    print glpi.help_item()
+
+    print "#> Getting standard items: ticket"
+    print json.dumps(glpi.get_all('ticket'),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+
+    print "#> Setting up new items..."
+    new_map = {
+        "ticket": "/Ticket",
+        "knowbase": "/knowbaseitem",
+        "problem": "/problem",
+        "change": "/change",
+        "computer": "/computer",
+        "software": "/software",
+        "network": "/networkequipment",
+    }
+    glpi.set_item_map(new_map)
+    print "#> Getting new item: COMPUTER"
+    print json.dumps(glpi.get_all('computer'),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+
+    # Setting up new map
+    print "#####> Creating new MAP..."
+    new_map = {
+         "knowbase": "/knowbaseitem"
+    }
+    glpi2 = GLPI(url, glpi_app_token, (username, password),
+                 item_map=new_map)
+
+    print "#> Getting item: KB"
+    print json.dumps(glpi2.get_all('knowbase'),
+                       indent=4,
+                       separators=(',', ': '),
+                       sort_keys=True)
+
+    print "#> Getting item KB by ID 1"
+    kb_dict = glpi2.get('knowbase', 1)
+    print json.dumps(kb_dict,
+                       indent=4,
+                       separators=(',', ': '),
+                       sort_keys=True)
+    print kb_dict
+    print "#> Creating new KB copying from previous..."
+    kb_data = {
+        "name": "New KB copyied from ID %s at %s" % (
+                                        kb_dict['id'], t),
+        "answer": "Description of KB: \n <br> API Desc </br> Just a test ",
+        "is_faq": kb_dict['is_faq'],
+        "knowbaseitemcategories_id": kb_dict['knowbaseitemcategories_id'],
+        "users_id": kb_dict['users_id'],
+        "view": kb_dict['view']
+    }
+    print "Creating object data: %s" % repr(kb_data)
+    kb_res = glpi2.create('knowbase', kb_data)
+    print json.dumps(kb_res,
+                     indent=4,
+                     separators=(',', ': '),
+                     sort_keys=True)
+
+def test_general_search():
+    glpi = GLPI(url, glpi_app_token, (username, password))
+
+    print "#> Getting help()"
+    print glpi.help_item()
+
+    print glpi.init_item('listSearchOptions')
+
+    token_session = glpi.api_session
+    print ">>>> Current session is: %s" % token_session
+
+    print "#> Getting search options"
+    print json.dumps(glpi.search_options('knowbaseitem'),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+
+    # item_search = [ { "link": 'AND', "itemtype": 'knowbaseitem', "field": 6,
+    # "searchtype": 'contains', "value": 'portal' },
+
+
+def test_search():
+
+    glpi = GLPI(url, glpi_app_token, (username, password))
+
+    criteria = {"criteria": [{"field": "name", "value":"portal"}]}
+    print "#> Searching an str(valud) in KBs"
+    print json.dumps(glpi.search('knowbase', criteria),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
 
 if __name__ == '__main__':
 
@@ -124,6 +225,9 @@ if __name__ == '__main__':
     print repr(vcap_service_credentials)
     t = time.strftime("%Y/%m/%d-%H:%M:%S")
 
-    test_profile()
-    test_ticket()
-    test_kb()
+    # test_profile()
+    # test_ticket()
+    #test_kb()
+    # test_general()
+    #test_general_search()
+    test_search()

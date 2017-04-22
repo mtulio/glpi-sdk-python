@@ -183,6 +183,9 @@ if __name__ == '__main__':
 
 ```
 
+* TODO: Update with new generic function. See more in tests script `tests/test_glpi_module.py`
+
+
 ## CONTRIBUTING
 
 ### TEST the code

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from .version import __version__
+from .glpi import GLPI
 from .profile import GlpiProfile
 from .knowbase import GlpiKnowBase
 from .knowbase import KnowBase
