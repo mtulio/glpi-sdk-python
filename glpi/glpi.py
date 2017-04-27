@@ -191,50 +191,12 @@ class GlpiService(object):
         return self.session
 
     """ Request """
-    # Could make this compute the label_id based on the variable name of the
-    # dictionary passed in (using **kwargs), but
-    # this might be confusing to understand.
-    @staticmethod
-    def unpack_id(dictionary, label_id):
-        if isinstance(dictionary, dict) and label_id in dictionary:
-            return dictionary[label_id]
-        return dictionary
-
-    @staticmethod
-    def _get_error_message(response):
-        """
-        Gets the error message from a JSON response.
-        {
-            code: 400
-            error: 'Bad request'
-        }
-        """
-        error_message = 'Unknown error'
-        try:
-            error_json = response.json()
-            if 'error' in error_json:
-                if isinstance(error_json['error'], dict) and 'description' in \
-                        error_json['error']:
-                    error_message = 'Error: ' + error_json['error'][
-                        'description']
-                else:
-                    error_message = 'Error: ' + error_json['error']
-            elif 'error_message' in error_json:
-                error_message = 'Error: ' + error_json['error_message']
-            elif 'msg' in error_json:
-                error_message = 'Error: ' + error_json['msg']
-            elif 'statusInfo' in error_json:
-                error_message = 'Error: ' + error_json['statusInfo']
-            if 'description' in error_json:
-                error_message += ', Description: ' + error_json['description']
-            error_message += ', Code: ' + str(response.status_code)
-        except:
-            pass
-        return error_message
-
     def request(self, method, url, accept_json=False, headers={},
                 params=None, json=None, data=None, files=None, **kwargs):
-        """ Make a request to GLPI Rest API """
+        """
+        Make a request to GLPI Rest API.
+        Return response object (http://docs.python-requests.org/en/master/api/#requests.Response)
+        """
 
         full_url = self.url + url
         if self.session is None:
@@ -267,32 +229,15 @@ class GlpiService(object):
         data = _remove_null_values(data)
         files = _remove_null_values(files)
 
-        response = requests.request(method=method, url=full_url,
+        try:
+            response = requests.request(method=method, url=full_url,
                                     headers=headers, params=params,
                                     data=data, **kwargs)
+        except Exception:
+            raise
 
-        if 200 <= response.status_code <= 299:
-            if accept_json:
-                response_json = response.json()
-                if 'status' in response_json and response_json['status'] \
-                        == 'ERROR':
-                    response.status_code = 400
-                    error_message = 'Unknown error'
+        return response
 
-                    if 'statusInfo' in response_json:
-                        error_message = response_json['statusInfo']
-                    if error_message == 'invalid-app-token':
-                        response.status_code = 401
-                    raise GlpiException('Error: ' + error_message)
-                return response_json
-            return response
-        else:
-            if response.status_code == 401:
-                error_message = 'Unauthorized: Access is denied due to ' \
-                                'invalid credentials '
-            else:
-                error_message = self._get_error_message(response)
-            raise GlpiException(error_message)
 
     def get_payload(self, data_req):
         """ Extract payload for REST API from JSON data. """
@@ -337,18 +282,31 @@ class GlpiService(object):
             return "{ 'error_message' : 'Object not found.'}"
 
         payload = '{"input": { %s }}' % (self.get_payload(object_data))
-        response = self.request('POST', self.uri, data=payload,
-                                accept_json=True)
 
-        return response
+        try:
+            response = self.request('POST', self.uri, data=payload,
+                                    accept_json=True)
+        except Exception as e:
+            print "#>> ERROR requesting uri(%s) payload(%s)"% (uri, payload)
+            raise
+
+        return response.json()
 
     def search_options(self, item_name):
 
         new_uri = "%s/%s" % (self.uri, item_name)
+        print "###", new_uri
+        response = self.request('GET', new_uri, accept_json=True)
+        print "###", response
+
+        return response.json()
+
+    def search_engine(self, search_query):
+
+        new_uri = "%s/%s" % (self.uri, search_query)
         response = self.request('GET', new_uri, accept_json=True)
 
-        return response
-
+        return response.json()
 
 class GlpiItem(object):
     """ Polymorphic class of GLPI Item object. """
@@ -430,6 +388,8 @@ class GLPI(object):
             "ticket": "/Ticket",
             "knowbase": "/knowbaseitem",
             "listSearchOptions": "/listSearchOptions",
+            "search": "/search",
+            "user": "/User",
         }
         self.api_rest = None
         self.api_session = None
@@ -514,13 +474,14 @@ class GLPI(object):
         return self.api_rest.create(item_data)
 
     def search_options(self, item_name):
+        """ List GLPI APIRest Search Options """
         if not self.init_item('listSearchOptions'):
             return {"message_error": "Unable to create an Item in GLPI Server."}
 
         return self.api_rest.search_options(item_name)
 
     def search_criteria(self, data, criteria):
-        """ Search in data some criteria """
+        """ #TODO Search in data some criteria """
         result = []
         for d in data:
             find = False
@@ -536,7 +497,7 @@ class GLPI(object):
         return {"message_info": "Not implemented yet"}
 
     def search(self, item_name, criteria):
-        """
+        """ #TODO
         Return an Item with that matchs with criteria
         criteria: [
             {
@@ -552,3 +513,58 @@ class GLPI(object):
             return self.search_metacriteria(criteria['metacriteria'])
         else:
             return {"message_error": "Unable to find a valid criteria."}
+
+    def search_engine(self, item_name, criteria):
+        """ Call GLPI's search engine syntax.
+        Ex. cURL - usage to query in 'name' and return ID:
+        $ curl -X GET  ... 'http://path/to/apirest.php/search/Knowbaseitem?\
+            criteria\[0\]\[field\]\=6\
+            &criteria\[0\]\[searchtype\]=contains\
+            &criteria\[0\]\[value\]=sites-multimidia\
+            &criteria\[0\]\[link\]\=AND\
+            &criteria\[1\]\[field\]\=2\
+            &criteria\[1\]\[searchtype\]\=contains\
+            &criteria\[1\]\[value\]\=\
+            &criteria\[1\]\[link\]\=AND' |jq .
+
+        INPUT query in JSON format (/apirest.php#search-items):
+        metacriteria: [
+            {
+                "link": 'AND'
+                "searchtype": "contais",
+                "field": "name",
+                "value": "search value"
+            }
+        ]
+
+        RETURNS:
+        GLPIs APIREST JSON formated with result of search in key 'data'.
+        """
+        field_map = {
+            "id": 2,
+            "name": 6,
+            "body": 6,
+        }
+        s_index = 0
+        uri_query = "%s?" % item_name
+
+        for c in criteria['criteria']:
+            if s_index == 0:
+                uri = ""
+            else:
+                uri = "&"
+
+            uri = uri + "criteria[%d][field]=%d&" % (s_index, field_map[c['field']])
+            if c['value'] is None:
+                uri = uri + "criteria[%d][value]=&" % (s_index)
+            else:
+                uri = uri + "criteria[%d][value]=%s&" % (s_index, c['value'])
+            uri = uri + "criteria[%d][searchtype]=%s&" % (s_index, c['searchtype'])
+            uri = uri + "criteria[%d][link]=%s" % (s_index, c['link'])
+            uri_query = uri_query + uri
+            s_index+=1
+
+        if not self.init_item('search'):
+            return {"message_error": "Unable to create an Item in GLPI Server."}
+
+        return self.api_rest.search_options(uri_query)
