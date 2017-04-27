@@ -174,6 +174,7 @@ def test_general():
                      separators=(',', ': '),
                      sort_keys=True)
 
+
 def test_general_search():
     glpi = GLPI(url, glpi_app_token, (username, password))
 
@@ -191,9 +192,6 @@ def test_general_search():
                       separators=(',', ': '),
                       sort_keys=True)
 
-    # item_search = [ { "link": 'AND', "itemtype": 'knowbaseitem', "field": 6,
-    # "searchtype": 'contains', "value": 'portal' },
-
 
 def test_search():
 
@@ -205,6 +203,7 @@ def test_search():
                       indent=4,
                       separators=(',', ': '),
                       sort_keys=True)
+
 
 if __name__ == '__main__':
 
