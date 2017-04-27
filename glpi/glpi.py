@@ -295,7 +295,9 @@ class GlpiService(object):
     def search_options(self, item_name):
 
         new_uri = "%s/%s" % (self.uri, item_name)
+        print "###", new_uri
         response = self.request('GET', new_uri, accept_json=True)
+        print "###", response
 
         return response.json()
 
