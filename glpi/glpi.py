@@ -239,25 +239,44 @@ class GlpiService(object):
         return response
 
 
-    def get_payload(self, data_req):
-        """ Extract payload for REST API from JSON data. """
+    def get_payload(self, data_json):
+        """ Construct the payload for REST API from JSON data. """
 
         data_str = ""
         null_str = "<DEFAULT_NULL>"
-        for k in data_req:
+        for k in data_json:
             if data_str is not "":
                 data_str = "%s," % data_str
 
-            if data_req[k] == null_str:
+            if data_json[k] == null_str:
                 data_str = '%s "%s": null' % (data_str, k)
-            elif isinstance(data_req[k], str):
-                data_str = '%s "%s": "%s"' % (data_str, k, data_req[k])
+            elif isinstance(data_json[k], str):
+                data_str = '%s "%s": "%s"' % (data_str, k, data_json[k])
             else:
-                data_str = '%s "%s": %s' % (data_str, k, str(data_req[k]))
+                data_str = '%s "%s": %s' % (data_str, k, str(data_json[k]))
 
         return data_str
 
     """ Generic Items methods """
+    # [C]REATE - Create an Item
+    def create(self, data_json=None):
+        """ Create an object Item. """
+
+        if (data_json is None):
+            return "{ 'error_message' : 'Object not found.'}"
+
+        payload = '{"input": { %s }}' % (self.get_payload(data_json))
+
+        try:
+            response = self.request('POST', self.uri, data=payload,
+                                    accept_json=True)
+        except Exception as e:
+            print "#>> ERROR requesting uri(%s) payload(%s)"% (uri, payload)
+            raise
+
+        return response.json()
+
+    # [R]EAD - Retrieve Item data
     def get_all(self):
         """ Return all content of Item in JSON format. """
 
@@ -274,99 +293,68 @@ class GlpiService(object):
         else:
             return {'error_message': 'Unale to get %s ID [%s]' % (self.uri,
                                                                   item_id)}
-
-    def create(self, object_data):
-        """ Create an object Item. """
-
-        if (object_data is None):
-            return "{ 'error_message' : 'Object not found.'}"
-
-        payload = '{"input": { %s }}' % (self.get_payload(object_data))
-
-        try:
-            response = self.request('POST', self.uri, data=payload,
-                                    accept_json=True)
-        except Exception as e:
-            print "#>> ERROR requesting uri(%s) payload(%s)"% (uri, payload)
-            raise
-
-        return response.json()
-
     def search_options(self, item_name):
-
+        """
+        List search options for an Item to be used in search_engine/search_query.
+        """
         new_uri = "%s/%s" % (self.uri, item_name)
-        print "###", new_uri
         response = self.request('GET', new_uri, accept_json=True)
-        print "###", response
 
         return response.json()
 
     def search_engine(self, search_query):
-
+        """
+        Search an item by URI.
+        Use GLPI search engine passing parameter by URI.
+        #TODO could pass search criteria in payload, like others items
+        operations.
+        """
         new_uri = "%s/%s" % (self.uri, search_query)
         response = self.request('GET', new_uri, accept_json=True)
 
         return response.json()
 
-class GlpiItem(object):
-    """ Polymorphic class of GLPI Item object. """
+    # [U]PDATE an Item
+    def update(self, data):
+        """ Update an object Item. """
 
-    def __init__(self, data={}):
-        self.data = data
-        self.null_str = "<DEFAULT_NULL>"
+        payload = '{"input": { %s }}' % (self.get_payload(data))
+        new_url = "%s/%d" % (self.uri, data['id'])
 
-    def get_data(self):
-        """ Returns entire attributes of Item data. """
-        return self.data
+        try:
+            response = self.request('PUT', self.uri, data=payload)
+        except Exception as e:
+            print {
+                "message_error": "ERROR requesting uri(%s) payload(%s)" % (
+                                    uri, payload)
+            }
+            raise
 
-    def get_attributes(self):
-        """ Return an specific attribute of Item data. """
-        return self.get_data()
+        return response.json()
 
-    def get_attribute(self, attr):
-        """ Returns an specific attribute. """
-        if attr in self.data:
-            return self.data[attr]
+    # [D]ELETE an Item
+    def delete(self, item_id, force_purge=False):
+        """ Delete an object Item. """
 
-    def set_attribute(self, attr, value):
-        """ Define the 'value' to an key. """
-        self.data[attr] = value
+        if not isinstance(item_id, int):
+            return {"message_error": "Please define item_id to be deleted."}
 
-    def set_attributes(self, attributes={}):
-        """ Define attributes to override defaults.  """
-        if attributes is {}:
-            return self.data
+        if force_purge:
+            payload = '{"input": { "id": %d } "force_purge": true}' % (item_id)
+        else:
+            payload = '{"input": { "id": %d }}' % (item_id)
 
-        for k in attributes:
-            if k in self.data.keys():
-                self.data[k] = attributes[k]
-            else:
-                self.data.update({k: attributes[k]})
-
-    def unset_attributes(self):
-        """ Clean all attributes. """
-        self.data = {}
-        return self.data
-
-    def get_stream(self):
-        """ Get stream of data with format acceptable in GLPI API.  """
-        input_data = ""
-        for k in self.data:
-            if input_data is not "":
-                input_data = "%s," % input_data
-
-            if self.data[k] == self.null_str:
-                input_data = '%s "%s": null' % (input_data, k)
-            elif isinstance(self.data[k], str):
-                input_data = '%s "%s": "%s"' % (input_data, k, self.data[k])
-            else:
-                input_data = '%s "%s": %s' % (input_data, k, str(self.data[k]))
-
-        return input_data
-
+        try:
+            response = self.request('DELETE', self.uri, data=payload)
+        except Exception as e:
+            print {
+                "message_error": "ERROR requesting uri(%s) payload(%s)" % (
+                                    uri, payload)
+            }
+            raise
+        return response.json()
 
 class GLPI(object):
-
     """
     Generic implementation of GLPI Items can manage all
     Itens in one GLPI server connection.
@@ -451,7 +439,15 @@ class GLPI(object):
 
         return True
 
-    # Itens operations
+    # [C]REATE - Create an Item
+    def create(self, item_name, item_data):
+        """ Create an Resource Item """
+        if not self.init_item(item_name):
+            return {"message_error": "Unable to create an Item in GLPI Server."}
+
+        return self.api_rest.create(item_data)
+
+    # [R]EAD - Retrieve Item data
     def get_all(self, item_name):
         """ Get all resources from item_name """
         if not self.init_item(item_name):
@@ -465,13 +461,6 @@ class GLPI(object):
             return {"message_error": "Unable to get Item by ID in GLPI Server."}
 
         return self.api_rest.get(item_id)
-
-    def create(self, item_name, item_data):
-        """ Create an Resource Item """
-        if not self.init_item(item_name):
-            return {"message_error": "Unable to create an Item in GLPI Server."}
-
-        return self.api_rest.create(item_data)
 
     def search_options(self, item_name):
         """ List GLPI APIRest Search Options """
@@ -497,7 +486,7 @@ class GLPI(object):
         return {"message_info": "Not implemented yet"}
 
     def search(self, item_name, criteria):
-        """ #TODO
+        """ #SHOULD BE IMPROVED
         Return an Item with that matchs with criteria
         criteria: [
             {
@@ -568,3 +557,19 @@ class GLPI(object):
             return {"message_error": "Unable to create an Item in GLPI Server."}
 
         return self.api_rest.search_options(uri_query)
+
+    # [U]PDATE an Item
+    def update(self, item_name, data):
+        """ Update an Resource Item. Should have all the Item payload """
+        if not self.init_item(item_name):
+            return {"message_error": "Unable to init Item in GLPI Server."}
+
+        return self.api_rest.update(data)
+
+    # [D]ELETE an Item
+    def delete(self, item_name, item_id, force_purge=False):
+        """ Delete an Resource Item. Should have all the Item payload """
+        if not self.init_item(item_name):
+            return {"message_error": "Unable to init Item in GLPI Server."}
+
+        return self.api_rest.delete(item_id, force_purge=force_purge)

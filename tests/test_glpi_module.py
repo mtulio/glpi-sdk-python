@@ -1,3 +1,4 @@
+# This is a big script to test some SDK items.
 
 import json
 import time
@@ -10,6 +11,7 @@ from glpi import GlpiKnowBase, KnowBase
 from glpi import GLPI
 
 load_dotenv(find_dotenv())
+
 
 def load_from_vcap_services(service_name):
     vcap_services = os.getenv("VCAP_SERVICES")
@@ -196,10 +198,27 @@ def test_general_search():
 def test_search():
 
     glpi = GLPI(url, glpi_app_token, (username, password))
-
     criteria = {"criteria": [{"field": "name", "value":"portal"}]}
     print "#> Searching an str(valud) in KBs"
     print json.dumps(glpi.search('knowbase', criteria),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+
+def test_update():
+    glpi = GLPI(url, glpi_app_token, (username, password))
+    item_data = {"id": 60, "name": "[test] Updating an ticket 2"}
+    print "#> Updating item 'ticket' with %s" % str(item_data)
+    print json.dumps(glpi.update('ticket', item_data),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+
+def test_delete():
+    glpi = GLPI(url, glpi_app_token, (username, password))
+    item_id = 63
+    print "#> Deleting item 'ticket' with ID %d" % item_id
+    print json.dumps(glpi.delete('ticket', item_id),
                       indent=4,
                       separators=(',', ': '),
                       sort_keys=True)
@@ -229,4 +248,17 @@ if __name__ == '__main__':
     #test_kb()
     # test_general()
     #test_general_search()
-    test_search()
+    #test_search()
+
+    # [C]REATE
+    # test_create()
+    #
+    # # [R]EAD
+    # test_read()
+    # test_search()
+
+    # [U]PDATE
+    test_update()
+
+    # [D]ELETE
+    test_delete()

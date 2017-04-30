@@ -14,8 +14,9 @@
 
 from .version import __version__
 from .glpi import GLPI
-from .profile import GlpiProfile
-from .knowbase import GlpiKnowBase
-from .knowbase import KnowBase
-from .ticket import GlpiTicket
-from .ticket import Ticket
+from .glpi_item import GlpiItem
+from .item_profile import GlpiProfile
+from .item_knowbase import GlpiKnowBase
+from .item_knowbase import KnowBase
+from .item_ticket import GlpiTicket
+from .item_ticket import Ticket
