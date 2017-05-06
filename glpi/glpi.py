@@ -195,7 +195,8 @@ class GlpiService(object):
                 params=None, json=None, data=None, files=None, **kwargs):
         """
         Make a request to GLPI Rest API.
-        Return response object (http://docs.python-requests.org/en/master/api/#requests.Response)
+        Return response object.
+        (http://docs.python-requests.org/en/master/api/#requests.Response)
         """
 
         full_url = self.url + url
@@ -231,13 +232,12 @@ class GlpiService(object):
 
         try:
             response = requests.request(method=method, url=full_url,
-                                    headers=headers, params=params,
-                                    data=data, **kwargs)
+                                        headers=headers, params=params,
+                                        data=data, **kwargs)
         except Exception:
             raise
 
         return response
-
 
     def get_payload(self, data_json):
         """ Construct the payload for REST API from JSON data. """
@@ -271,7 +271,7 @@ class GlpiService(object):
             response = self.request('POST', self.uri, data=payload,
                                     accept_json=True)
         except Exception as e:
-            print "#>> ERROR requesting uri(%s) payload(%s)"% (uri, payload)
+            print "#>> ERROR requesting uri(%s) payload(%s)" % (uri, payload)
             raise
 
         return response.json()
@@ -293,9 +293,11 @@ class GlpiService(object):
         else:
             return {'error_message': 'Unale to get %s ID [%s]' % (self.uri,
                                                                   item_id)}
+
     def search_options(self, item_name):
         """
-        List search options for an Item to be used in search_engine/search_query.
+        List search options for an Item to be used in
+        search_engine/search_query.
         """
         new_uri = "%s/%s" % (self.uri, item_name)
         response = self.request('GET', new_uri, accept_json=True)
@@ -353,6 +355,7 @@ class GlpiService(object):
             }
             raise
         return response.json()
+
 
 class GLPI(object):
     """
@@ -443,7 +446,7 @@ class GLPI(object):
     def create(self, item_name, item_data):
         """ Create an Resource Item """
         if not self.init_item(item_name):
-            return {"message_error": "Unable to create an Item in GLPI Server."}
+            return {"message_error": "Unable to create an Item in GLPI Server"}
 
         return self.api_rest.create(item_data)
 
@@ -458,14 +461,14 @@ class GLPI(object):
     def get(self, item_name, item_id):
         """ Get item_name resource by ID """
         if not self.init_item(item_name):
-            return {"message_error": "Unable to get Item by ID in GLPI Server."}
+            return {"message_error": "Unable to get Item by ID in GLPI Server"}
 
         return self.api_rest.get(item_id)
 
     def search_options(self, item_name):
         """ List GLPI APIRest Search Options """
         if not self.init_item('listSearchOptions'):
-            return {"message_error": "Unable to create an Item in GLPI Server."}
+            return {"message_error": "Unable to create an Item in GLPI Server"}
 
         return self.api_rest.search_options(item_name)
 
@@ -495,10 +498,10 @@ class GLPI(object):
             }
         ]
         """
-        if criteria.has_key('criteria'):
+        if 'criteria' in criteria:
             data = self.get_all(item_name)
             return self.search_criteria(data, criteria['criteria'])
-        elif criteria.has_key('metacriteria'):
+        elif 'metacriteria' in criteria:
             return self.search_metacriteria(criteria['metacriteria'])
         else:
             return {"message_error": "Unable to find a valid criteria."}
@@ -543,18 +546,20 @@ class GLPI(object):
             else:
                 uri = "&"
 
-            uri = uri + "criteria[%d][field]=%d&" % (s_index, field_map[c['field']])
+            uri = uri + "criteria[%d][field]=%d&" % (s_index,
+                                                     field_map[c['field']])
             if c['value'] is None:
                 uri = uri + "criteria[%d][value]=&" % (s_index)
             else:
                 uri = uri + "criteria[%d][value]=%s&" % (s_index, c['value'])
-            uri = uri + "criteria[%d][searchtype]=%s&" % (s_index, c['searchtype'])
+            uri = uri + "criteria[%d][searchtype]=%s&" % (s_index,
+                                                          c['searchtype'])
             uri = uri + "criteria[%d][link]=%s" % (s_index, c['link'])
             uri_query = uri_query + uri
-            s_index+=1
+            s_index += 1
 
         if not self.init_item('search'):
-            return {"message_error": "Unable to create an Item in GLPI Server."}
+            return {"message_error": "Unable to search Item in GLPI Server"}
 
         return self.api_rest.search_options(uri_query)
 
