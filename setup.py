@@ -12,21 +12,17 @@ exec (open('glpi/version.py').read())
 
 setup(
     name='glpi',
+    packages=["glpi"],
     version=__version__,
-    description='GLPI Python SDK',
+    description='GLPI API SDK',
     long_description=readme(),
     url='https://github.com/truly-systems/glpi-sdk-python',
+    download_url='https://github.com/truly-systems/glpi-sdk-python/archive/0.1.tar.gz',
     author='Marco Tulio R Braga',
     author_email='braga@mtulio.eng.br',
     license='Apache-2.0',
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache-2.0 License',
-        'Programming Language :: Python :: 2.7',
-    ],
-    keywords='GLPI SDK Library',
-    packages=["glpi"],
+    classifiers=[],
+    keywords=['GLPI', 'SDK'],
     install_requires=[
         'requests',
     ]
