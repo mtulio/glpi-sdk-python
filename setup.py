@@ -15,7 +15,7 @@ setup(
     packages=["glpi"],
     version=__version__,
     description='GLPI API SDK',
-    long_description=readme(),
+    #long_description=readme(),
     url='https://github.com/truly-systems/glpi-sdk-python',
     download_url='https://github.com/truly-systems/glpi-sdk-python/archive/0.1.0.tar.gz',
     author='Marco Tulio R Braga',
