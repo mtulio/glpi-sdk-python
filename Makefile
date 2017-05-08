@@ -15,7 +15,7 @@ dependencies:
 
 .PHONY: check-syntax
 check-syntax:
-	. $(PATH_VENV)/bin/activate && pep8 *.py
+	. $(PATH_VENV)/bin/activate && pep8 glpi/*.py
 
 .PHONY: test-setup
 test-setup: clean
