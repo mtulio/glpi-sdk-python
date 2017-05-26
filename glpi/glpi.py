@@ -294,6 +294,12 @@ class GlpiService(object):
             return {'error_message': 'Unale to get %s ID [%s]' % (self.uri,
                                                                   item_id)}
 
+    def get_path(self, path=''):
+        """ Return the JSON from path """
+        uri = '/%s' % (path)
+        response = self.request('GET', uri)
+        return response.json()
+
     def search_options(self, item_name):
         """
         List search options for an Item to be used in
@@ -380,7 +386,10 @@ class GLPI(object):
             "knowbase": "/knowbaseitem",
             "listSearchOptions": "/listSearchOptions",
             "search": "/search",
-            "user": "/User",
+            "user": "user",
+            "getFullSession": "getFullSession",
+            "getActiveProfile": "getActiveProfile",
+            "getMyProfiles": "getMyProfiles",
         }
         self.api_rest = None
         self.api_session = None
@@ -458,8 +467,12 @@ class GLPI(object):
 
         return self.api_rest.get_all()
 
-    def get(self, item_name, item_id):
-        """ Get item_name resource by ID """
+    def get(self, item_name, item_id=None):
+        """ Get item_name and/with resource by ID """
+
+        if item_id is None:
+            return self.api_rest.get_path(item_name)
+
         if not self.init_item(item_name):
             return {"message_error": "Unable to get Item by ID in GLPI Server"}
 

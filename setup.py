@@ -17,7 +17,7 @@ setup(
     description='GLPI API SDK',
     #long_description=readme(),
     url='https://github.com/truly-systems/glpi-sdk-python',
-    download_url='https://github.com/truly-systems/glpi-sdk-python/archive/0.1.0.tar.gz',
+    download_url='https://github.com/truly-systems/glpi-sdk-python/archive/0.1.1.tar.gz',
     author='Marco Tulio R Braga',
     author_email='braga@mtulio.eng.br',
     license='Apache-2.0',
