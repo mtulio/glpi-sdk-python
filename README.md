@@ -66,9 +66,9 @@ Then import it in your script and create a `glpi` API connection:
   glpi = GLPI(url, token, (user, password))
   ```
 
-### Tickets
+### Examples
 
-* Get all Tickets
+### Get all Tickets
 
     ```python
     print "Getting all Tickets: "
@@ -78,7 +78,7 @@ Then import it in your script and create a `glpi` API connection:
                       sort_keys=True)
     ```
 
-* Create an Ticket
+### Create an Ticket
 
     ```python
 
@@ -97,7 +97,7 @@ Then import it in your script and create a `glpi` API connection:
                       sort_keys=True)
     ```
 
-* Get ticket by ID
+### Get ticket by ID
 
     ```python
     print "Getting Ticket with ID 1: "
@@ -107,7 +107,7 @@ Then import it in your script and create a `glpi` API connection:
                       sort_keys=True)
     ```
 
-* Profile information
+### Profile information
 
     ```python
     print "Getting 'My' profile: "
@@ -117,7 +117,7 @@ Then import it in your script and create a `glpi` API connection:
                       sort_keys=True)
     ```
 
-* Full example
+### Full example
 
 > TODO: create an full example with various Items available in GLPI Rest API.
 
