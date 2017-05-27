@@ -23,15 +23,15 @@ Just install from:
 
 * PyPi:
 
-    ```bash
-    pip install glpi
-    ```
+  ```bash
+  pip install glpi
+  ```
 
 * repository (development):
 
-    ``bash
-    pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi
-    ```
+  ```bash
+  pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi
+  ```
 
 * requirements.txt (development)
 
