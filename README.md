@@ -8,198 +8,120 @@ GLPI SDK written in Python.
 
 ## Description
 
-This SDK is written in Python to help developers integrate their apps, APIS
-and scripts in GLPI infrastructure. This SDK abstract the [GLPI Rest API](https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md)
+This SDK is written in Python to help developers integrate their apps, APIS and scripts in GLPI infrastructure. This SDK abstract
+the [GLPI Rest API](https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md).
 
-To usage it, you should have username, password and API-Token from your GLPI
-server.
+To usage it, you should have username, password and API-Token from your GLPI server.
 
 See also:
 * [GLPI Rest API](https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md#list-searchoptions)
 
-## SDK supported items
-
-* Ticket: get, get all, create
-* Knowledge Base: get, get all, create
 
 ## Install
 
-Just install using pip, from:
+Just install from:
 
-* Repository:
+* PyPi:
 
-`pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi`
+  ```bash
+  pip install glpi
+  ```
 
-* requirements.txt
+* repository (development):
 
-```shell
-$ echo '-e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi`'\
-  > requirements.txt
+  ```bash
+  pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi
+  ```
 
-$ pip install -r requirements.txt
-```
+* requirements.txt (development)
+
+    ```shell
+    pip install -r requirements-dev.txt
+    ```
 
 ## Usage
 
-You should enable the GLPI API and generate an App Token. TO create one follow these steps:
+You should enable the GLPI API and generate an App Token.
 
-* TODO
+Please, export these environments variables with yours config:
 
-Please, change the vars bellow with yours:
+  ```bash
+  export username = "GLPI_USER"
+  export password = "GLPI_USER"
+  export url = 'http://glpi.example.com/apirest.php'
+  export glpi_app_token = "GLPI_API_TOKEN"
+  ```
 
-```python
-username = "GLPI_USER"
-password = "GLPI_USER"
-url = 'http://glpi.example.com/apirest.php'
-glpi_app_token = "GLPI_API_TOKEN"
+Then import it in your script and create a `glpi` API connection:
 
-```
+  ```python
+  import os
+  from glpi import GLPI
 
-### Tickets
+  url = os.getenv("GLPI_API_URL") or None
+  user = os.getenv("GLPI_USERNAME") or None
+  password = os.getenv("GLPI_PASSWORD") or None
+  token = os.getenv("GLPI_APP_TOKEN") or None
 
-* Get all Tickets
+  glpi = GLPI(url, token, (user, password))
+  ```
 
-```python
-from glpi import GlpiTicket
+### Examples
 
-glpi_ticket = GlpiTicket(url, glpi_app_token,
-                         username=username,
-                         password=password)
+### Get all Tickets
 
-tickets_all = glpi_ticket.get_all()
-print "Retrieving all tickets: %s" % json.dumps(tickets_all,
-                  indent=4,
-                  separators=(',', ': '),
-                  sort_keys=True)
-```
+    ```python
+    print "Getting all Tickets: "
+    print json.dumps(glpi.get_all('ticket'),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+    ```
 
-* Create an Ticket
+### Create an Ticket
 
-```python
-from glpi import GlpiTicket, Ticket
+    ```python
 
-glpi_ticket = GlpiTicket(url, glpi_app_token,
-                       username=username,
-                       password=password)
+    ticket_payload = {
+      'name': 'New ticket from SDK',
+      'content': '>>>> Content of ticket created by SDK API <<<'
+    }
 
-ticket = Ticket(name='New ticket from SDK',
-                content='>>>> Content of ticket created by SDK API <<<')
+    ticket_dict = glpi.create('ticket', ticket_payload)
+    if isinstance(ticket_dict, dict):
+      print "The ticket request was sent. See results: "
 
-ticket_dict = glpi_ticket.create(ticket_data=ticket)
-print "Created the ticket: %s" % ticket_dict
+    print json.dumps(ticket_dict,
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+    ```
 
-```
+### Get ticket by ID
 
-* Get ticket by ID
+    ```python
+    print "Getting Ticket with ID 1: "
+    print json.dumps(glpi.get('ticket', 1),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+    ```
 
-```python
-from glpi import GlpiTicket, Ticket
+### Profile information
 
-glpi_ticket = GlpiTicket(url, glpi_app_token,
-                       username=username,
-                       password=password)
+    ```python
+    print "Getting 'My' profile: "
+    print json.dumps(glpi.get('getMyProfiles'),
+                      indent=4,
+                      separators=(',', ': '),
+                      sort_keys=True)
+    ```
 
-ticket_dict = {}
-ticket_dict['id'] = 1
-ticket_get = glpi_ticket.get(ticket_dict['id'])
-print "Got this ticket: %s" % json.dumps(ticket_get,
-                  indent=4,
-                  separators=(',', ': '),
-                  sort_keys=True)
+### Full example
 
-```
-
-* Profile information
-
-```python
-from glpi import GlpiProfile
-
-glpi_pfl = GlpiProfile(url,
-            glpi_app_token, username=username,
-            password=password)
-
-print "Getting profile "
-print json.dumps(glpi_pfl.get_my_profiles(),
-               indent=4, separators=(',', ': '))
-```
-
-* Reusing session token
-
-```python
-token_session = glpi_pfl.get_session_token()
-print "Update session for Ticket object: %s" %\
-        glpi_ticket.update_session_token(token_session)
-
-```
-
-* Full example
-
-```python
-from glpi import GlpiProfile
-from glpi import GlpiTicket, Ticket
-
-
-username = "GLPI_USER"
-password = "GLPI_USER"
-url = 'http://glpi.example.com/apirest.php'
-glpi_app_token = "GLPI_API_TOKEN"
-
-
-if __name__ == '__main__':
-
-  glpi_pfl = GlpiProfile(url,
-              glpi_app_token, username=username,
-              password=password)
-
-  print "Getting profile "
-  print json.dumps(glpi_pfl.get_my_profiles(),
-                   indent=4, separators=(',', ': '))
-
-  token_session = glpi_pfl.get_session_token()
-  print "Current session is: %s" % token_session
-
-  glpi_ticket = GlpiTicket(url, glpi_app_token,
-                           username=username,
-                           password=password)
-
-  print "Update Ticket object to session: %s" %\
-          glpi_ticket.update_session_token(token_session)
-
-  tickets_all = glpi_ticket.get_all()
-  print "Retrieving all tickets: %s" % json.dumps(tickets_all,
-                    indent=4,
-                    separators=(',', ': '),
-                    sort_keys=True)
-
-  ticket = Ticket(name='New ticket from SDK',
-                  content=' Content of ticket created by SDK API ')
-  ticket_dict = glpi_ticket.create(ticket_data=ticket)
-  print "Created the ticket: %s" % ticket_dict
-
-  print "Getting ticket recently created with id %d ..." % ticket_dict['id']
-  ticket_get = glpi_ticket.get(ticket_dict['id'])
-  print "Got this ticket: %s" % json.dumps(ticket_get,
-                    indent=4,
-                    separators=(',', ': '),
-                    sort_keys=True)
-
-```
-
-* TODO: Update with new generic function. See more in tests script `tests/test_glpi_module.py`
+> TODO: create an full example with various Items available in GLPI Rest API.
 
 
 ## CONTRIBUTING
 
-### TEST the code
-
-* Install tests dependencies
-
-`make dependencies`
-
-* Test PEP syntax
-
-`make check-syntax`
-
-* Test installation setup
-
-`make test-setup`
+See [CONTRIBUTING.md](CONTRIBUTING.md)

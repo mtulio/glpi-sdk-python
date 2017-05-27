@@ -62,6 +62,7 @@ class GlpiInvalidArgument(GlpiException):
 
 class GlpiService(object):
     """ Polymorphic class of GLPI REST API Service. """
+    __version__ = __version__
 
     def __init__(self, url_apirest, token_app, uri,
                  username=None, password=None, token_auth=None,
@@ -294,6 +295,12 @@ class GlpiService(object):
             return {'error_message': 'Unale to get %s ID [%s]' % (self.uri,
                                                                   item_id)}
 
+    def get_path(self, path=''):
+        """ Return the JSON from path """
+        uri = '/%s' % (path)
+        response = self.request('GET', uri)
+        return response.json()
+
     def search_options(self, item_name):
         """
         List search options for an Item to be used in
@@ -365,6 +372,7 @@ class GLPI(object):
     can reuse API sessions.
     To support new items you should create the dict key/value in item_map.
     """
+    __version__ = __version__
 
     def __init__(self, url, app_token, auth_token,
                  item_map=None):
@@ -380,7 +388,10 @@ class GLPI(object):
             "knowbase": "/knowbaseitem",
             "listSearchOptions": "/listSearchOptions",
             "search": "/search",
-            "user": "/User",
+            "user": "user",
+            "getFullSession": "getFullSession",
+            "getActiveProfile": "getActiveProfile",
+            "getMyProfiles": "getMyProfiles",
         }
         self.api_rest = None
         self.api_session = None
@@ -458,8 +469,12 @@ class GLPI(object):
 
         return self.api_rest.get_all()
 
-    def get(self, item_name, item_id):
-        """ Get item_name resource by ID """
+    def get(self, item_name, item_id=None):
+        """ Get item_name and/with resource by ID """
+
+        if item_id is None:
+            return self.api_rest.get_path(item_name)
+
         if not self.init_item(item_name):
             return {"message_error": "Unable to get Item by ID in GLPI Server"}
 

@@ -1,3 +1,2 @@
 pep8
-codecov
-python-dotenv
+git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi
