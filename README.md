@@ -29,7 +29,7 @@ Just install from:
 
 * repository (development):
 
-    ```bash
+    ``bash
     pip install -e git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi
     ```
 
