@@ -62,6 +62,7 @@ class GlpiInvalidArgument(GlpiException):
 
 class GlpiService(object):
     """ Polymorphic class of GLPI REST API Service. """
+    __version__ = __version__
 
     def __init__(self, url_apirest, token_app, uri,
                  username=None, password=None, token_auth=None,
@@ -371,6 +372,7 @@ class GLPI(object):
     can reuse API sessions.
     To support new items you should create the dict key/value in item_map.
     """
+    __version__ = __version__
 
     def __init__(self, url, app_token, auth_token,
                  item_map=None):
