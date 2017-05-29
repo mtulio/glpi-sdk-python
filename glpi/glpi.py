@@ -281,7 +281,8 @@ class GlpiService(object):
     def get_all(self):
         """ Return all content of Item in JSON format. """
 
-        res = self.request('GET', self.uri)
+        uri = '/' + self.uri
+        res = self.request('GET', uri)
         return res.json()
 
     def get(self, item_id):
