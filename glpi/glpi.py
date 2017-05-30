@@ -200,9 +200,7 @@ class GlpiService(object):
         (http://docs.python-requests.org/en/master/api/#requests.Response)
         """
 
-        full_url = self.url + url
-        if self.session is None:
-            new_session = True
+        full_url = '%s/%s' % (self.url, url.strip('/'))
 
         input_headers = _remove_null_values(headers) if headers else {}
 
@@ -281,15 +279,14 @@ class GlpiService(object):
     def get_all(self):
         """ Return all content of Item in JSON format. """
 
-        uri = '/' + self.uri
-        res = self.request('GET', uri)
+        res = self.request('GET', self.uri)
         return res.json()
 
     def get(self, item_id):
         """ Return the JSON item with ID item_id. """
 
         if isinstance(item_id, int):
-            uri = '/%s/%d' % (self.uri, item_id)
+            uri = '%s/%d' % (self.uri, item_id)
             response = self.request('GET', uri)
             return response.json()
         else:
@@ -298,8 +295,7 @@ class GlpiService(object):
 
     def get_path(self, path=''):
         """ Return the JSON from path """
-        uri = '/%s' % (path)
-        response = self.request('GET', uri)
+        response = self.request('GET', path)
         return response.json()
 
     def search_options(self, item_name):
