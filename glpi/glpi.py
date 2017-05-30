@@ -473,11 +473,11 @@ class GLPI(object):
     def get(self, item_name, item_id=None):
         """ Get item_name and/with resource by ID """
 
-        if item_id is None:
-            return self.api_rest.get_path(item_name)
-
         if not self.init_item(item_name):
             return {"message_error": "Unable to get Item by ID in GLPI Server"}
+
+        if item_id is None:
+            return self.api_rest.get_path(item_name)
 
         return self.api_rest.get(item_id)
 
