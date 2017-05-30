@@ -15,12 +15,16 @@
 # GLPI API Rest documentation:
 # https://github.com/glpi-project/glpi/blob/9.1/bugfixes/apirest.md
 
+from __future__ import print_function
+import os
 import json as json_import
+import logging
 import requests
 from requests.structures import CaseInsensitiveDict
-import os
 
 from version import __version__
+
+logger = logging.getLogger(__name__)
 
 
 def load_from_vcap_services(service_name):
@@ -168,7 +172,7 @@ class GlpiService(object):
             self.session = r.json()['session_token']
             return True
         except Exception as e:
-            raise Exception("Unable to init session in GLPI server: %s" % e)
+            raise GlpiException("Unable to init session in GLPI server: %s" % e)
 
         return False
 
@@ -215,7 +219,7 @@ class GlpiService(object):
                 self.set_session_token()
             headers.update({'Session-Token': self.session})
         except Exception as e:
-            raise Exception("Unable to get Session token. ERROR: %s" % e)
+            raise GlpiException("Unable to get Session token. ERROR: %s" % e)
 
         if self.app_token is not None:
             headers.update({'App-Token': self.app_token})
@@ -234,6 +238,7 @@ class GlpiService(object):
                                         headers=headers, params=params,
                                         data=data, **kwargs)
         except Exception:
+            logger.error("ERROR requesting uri(%s) payload(%s)" % (url, data))
             raise
 
         return response
@@ -266,12 +271,7 @@ class GlpiService(object):
 
         payload = '{"input": { %s }}' % (self.get_payload(data_json))
 
-        try:
-            response = self.request('POST', self.uri, data=payload,
-                                    accept_json=True)
-        except Exception as e:
-            print "#>> ERROR requesting uri(%s) payload(%s)" % (uri, payload)
-            raise
+        response = self.request('POST', self.uri, data=payload, accept_json=True)
 
         return response.json()
 
@@ -327,14 +327,7 @@ class GlpiService(object):
         payload = '{"input": { %s }}' % (self.get_payload(data))
         new_url = "%s/%d" % (self.uri, data['id'])
 
-        try:
-            response = self.request('PUT', self.uri, data=payload)
-        except Exception as e:
-            print {
-                "message_error": "ERROR requesting uri(%s) payload(%s)" % (
-                                    uri, payload)
-            }
-            raise
+        response = self.request('PUT', new_url, data=payload)
 
         return response.json()
 
@@ -350,14 +343,7 @@ class GlpiService(object):
         else:
             payload = '{"input": { "id": %d }}' % (item_id)
 
-        try:
-            response = self.request('DELETE', self.uri, data=payload)
-        except Exception as e:
-            print {
-                "message_error": "ERROR requesting uri(%s) payload(%s)" % (
-                                    uri, payload)
-            }
-            raise
+        response = self.request('DELETE', self.uri, data=payload)
         return response.json()
 
 
@@ -442,7 +428,7 @@ class GLPI(object):
             try:
                 self.init_api()
             except:
-                print "message_error: Unable to InitSession in GLPI Server."
+                logger.error("Unable to InitSession in GLPI Server.")
                 return False
 
         if update_api:
