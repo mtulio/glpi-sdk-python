@@ -22,7 +22,7 @@ import logging
 import requests
 from requests.structures import CaseInsensitiveDict
 
-from version import __version__
+from .version import __version__
 
 logger = logging.getLogger(__name__)
 

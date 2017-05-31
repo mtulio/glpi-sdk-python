@@ -2,20 +2,19 @@
 
 from __future__ import print_function
 
+import os
 import json
 import time
-import sys
-import os
+import pytest
 from dotenv import load_dotenv, find_dotenv
 from glpi import GlpiProfile
 from glpi import GlpiTicket, Ticket
 from glpi import GlpiKnowBase, KnowBase
 from glpi import GLPI
 
-load_dotenv(find_dotenv())
-
 
 def load_from_vcap_services(service_name):
+    load_dotenv(find_dotenv())
     vcap_services = os.getenv("VCAP_SERVICES")
     if vcap_services is not None:
         services = json.loads(vcap_services)
@@ -25,26 +24,20 @@ def load_from_vcap_services(service_name):
         return None
 
 
-def test_profile():
-    glpi_pfl = GlpiProfile(url,
-                           glpi_app_token, username=username,
-                           password=password)
-
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_profile(glpi_profile):
     print("Getting profile ")
-    print(json.dumps(glpi_pfl.get_my_profiles(),
+    print(json.dumps(glpi_profile.get_my_profiles(),
                      indent=4, separators=(',', ': ')))
 
-    token_session = glpi_pfl.get_session_token()
+    token_session = glpi_profile.get_session_token()
     print("Current session is: %s" % token_session)
 
 
-def test_ticket():
-    glpi_ticket = GlpiTicket(url, glpi_app_token,
-                             username=username,
-                             password=password)
-
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_ticket(glpi_ticket, timestamp):
     print("##> Update Ticket object to session: %s" %
-          glpi_ticket.update_session_token(token_session))
+          glpi_ticket.update_session_token(""))
 
     tickets_all = glpi_ticket.get_all()
     print("Retrieving all tickets: %s" % json.dumps(tickets_all,
@@ -52,8 +45,8 @@ def test_ticket():
           separators=(',', ': '),
           sort_keys=True))
 
-    ticket = Ticket(name="New ticket from SDK %s" % t,
-                    content=" Content of ticket created by SDK API  %s" % t)
+    ticket = Ticket(name="New ticket from SDK %s" % timestamp,
+                    content=" Content of ticket created by SDK API  %s" % timestamp)
     ticket_dict = glpi_ticket.create(ticket.get_data())
     print("Created the ticket: %s" % ticket_dict)
 
@@ -65,18 +58,15 @@ def test_ticket():
           sort_keys=True))
 
 
-def test_kb():
-    kb_item = GlpiKnowBase(url, glpi_app_token,
-                           username=username,
-                           password=password)
-
-    res = kb_item.get_all()
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_kb(glpi_know_base):
+    res = glpi_know_base.get_all()
     print("Retrieving all KBs: %s" % json.dumps(res,
           indent=4,
           separators=(',', ': '),
           sort_keys=True))
 
-    res = kb_item.get(1)
+    res = glpi_know_base.get(1)
     print("Retrieve KB ID: %s" % json.dumps(res,
           indent=4,
           separators=(',', ': '),
@@ -92,12 +82,12 @@ def test_kb():
           separators=(',', ': '),
           sort_keys=True))
 
-    print("SDK Version: %s" % kb_item.get_version())
-    print("SDK Version: %s" % kb_item.__version__)
+    print("SDK Version: %s" % glpi_know_base.get_version())
+    print("SDK Version: %s" % glpi_know_base.__version__)
 
     print("KB Creating new one...")
-    name = "New KB Title %s" % t
-    subject = "New KB Body %s" % t
+    name = "New KB Title %s" % timestamp
+    subject = "New KB Body %s" % timestamp
     kb2 = KnowBase()
     kb2.set_attribute('name', name)
     kb2.set_attribute('answer', subject)
@@ -107,15 +97,13 @@ def test_kb():
           separators=(',', ': '),
           sort_keys=True))
 
-    kb_dict = kb_item.create(kb2.get_data())
+    kb_dict = glpi_know_base.create(kb2.get_data())
     print("Creating: %s " % kb_dict)
 
 
-def test_general():
-
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_general(glpi):
     # Basic usage
-    glpi = GLPI(url, glpi_app_token, (username, password))
-
     print("#> Getting help()")
     print(glpi.help_item())
 
@@ -147,17 +135,16 @@ def test_general():
     new_map = {
          "knowbase": "/knowbaseitem"
     }
-    glpi2 = GLPI(url, glpi_app_token, (username, password),
-                 item_map=new_map)
+    glpi.set_item_map(new_map)
 
     print("#> Getting item: KB")
-    print(json.dumps(glpi2.get_all('knowbase'),
+    print(json.dumps(glpi.get_all('knowbase'),
                      indent=4,
                      separators=(',', ': '),
                      sort_keys=True))
 
     print("#> Getting item KB by ID 1")
-    kb_dict = glpi2.get('knowbase', 1)
+    kb_dict = glpi.get('knowbase', 1)
     print(json.dumps(kb_dict,
                      indent=4,
                      separators=(',', ': '),
@@ -166,7 +153,7 @@ def test_general():
     print("#> Creating new KB copying from previous...")
     kb_data = {
         "name": "New KB copyied from ID %s at %s" % (
-                                        kb_dict['id'], t),
+                                        kb_dict['id'], timestamp),
         "answer": "Description of KB: \n <br> API Desc </br> Just a test ",
         "is_faq": kb_dict['is_faq'],
         "knowbaseitemcategories_id": kb_dict['knowbaseitemcategories_id'],
@@ -174,16 +161,15 @@ def test_general():
         "view": kb_dict['view']
     }
     print("Creating object data: %s" % repr(kb_data))
-    kb_res = glpi2.create('knowbase', kb_data)
+    kb_res = glpi.create('knowbase', kb_data)
     print(json.dumps(kb_res,
                      indent=4,
                      separators=(',', ': '),
                      sort_keys=True))
 
 
-def test_general_search():
-    glpi = GLPI(url, glpi_app_token, (username, password))
-
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_general_search(glpi):
     print("#> Getting help()")
     print(glpi.help_item())
 
@@ -199,9 +185,8 @@ def test_general_search():
                      sort_keys=True))
 
 
-def test_search():
-
-    glpi = GLPI(url, glpi_app_token, (username, password))
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_search(glpi):
     criteria = {"criteria": [{"field": "name", "value": "portal"}]}
     print("#> Searching an str(valud) in KBs")
     print(json.dumps(glpi.search('knowbase', criteria),
@@ -210,8 +195,8 @@ def test_search():
                      sort_keys=True))
 
 
-def test_update():
-    glpi = GLPI(url, glpi_app_token, (username, password))
+@pytest.mark.skipif('VCAP_SERVICES' not in os.environ, reason='disabled because it needs an actual server')
+def test_update(glpi):
     item_data = {"id": 60, "name": "[test] Updating an ticket 2"}
     print("#> Updating item 'ticket' with %s" % str(item_data))
     print(json.dumps(glpi.update('ticket', item_data),
@@ -220,52 +205,49 @@ def test_update():
                      sort_keys=True))
 
 
-def test_delete():
-    glpi = GLPI(url, glpi_app_token, (username, password))
+@pytest.mark.skip(reason='disabled because it needs an actual server')
+def test_delete(glpi):
     item_id = 63
     print("#> Deleting item 'ticket' with ID %d" % item_id)
-    print(json.dumps(glpi.delete('ticket', item_id),
-                     indent=4,
-                     separators=(',', ': '),
-                     sort_keys=True))
+    assert(glpi.delete('ticket', item_id))
 
 
-if __name__ == '__main__':
+@pytest.fixture()
+def glpi(service_credentials):
+    return GLPI(*service_credentials)
 
+
+@pytest.fixture()
+def glpi_know_base(service_credentials):
+    return GlpiKnowBase(*service_credentials)
+
+
+@pytest.fixture()
+def glpi_ticket(service_credentials):
+    return GlpiTicket(*service_credentials)
+
+
+@pytest.fixture()
+def glpi_profile(service_credentials):
+    return GlpiProfile(*service_credentials)
+
+
+@pytest.fixture()
+def service_credentials():
     vcap_service_credentials = load_from_vcap_services('glpi')
-    url = username = password = glpi_app_token = token_session = ""
 
     if vcap_service_credentials is not None and isinstance(
        vcap_service_credentials, dict):
         url = vcap_service_credentials['url']
         username = vcap_service_credentials['username']
         password = vcap_service_credentials['password']
-        glpi_app_token = vcap_service_credentials['app_token']
-
+        app_token = vcap_service_credentials['app_token']
+        return (url, app_token, (username, password))
     else:
-        print("Unable to load .env file."
-              "Please create using tests/.env.sample")
-        sys.exit(1)
+        pytest.fail("Unable to load .env file."
+                    "Please create using tests/.env.sample")
 
-    print(repr(vcap_service_credentials))
-    t = time.strftime("%Y/%m/%d-%H:%M:%S")
 
-    # test_profile()
-    # test_ticket()
-    # test_kb()
-    # test_general()
-    # test_general_search()
-    # test_search()
-
-    # [C]REATE
-    # test_create()
-    #
-    # # [R]EAD
-    # test_read()
-    # test_search()
-
-    # [U]PDATE
-    test_update()
-
-    # [D]ELETE
-    test_delete()
+@pytest.fixture()
+def timestamp():
+    return time.strftime("%Y/%m/%d-%H:%M:%S")

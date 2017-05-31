@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .version import __version__
-from .glpi import GLPI
-from .glpi_item import GlpiItem
-from .item_profile import GlpiProfile
-from .item_knowbase import GlpiKnowBase
-from .item_knowbase import KnowBase
-from .item_ticket import GlpiTicket
-from .item_ticket import Ticket
+from .version import __version__  # noqa
+from .glpi import GLPI  # noqa
+from .glpi_item import GlpiItem  # noqa
+from .item_profile import GlpiProfile  # noqa
+from .item_knowbase import GlpiKnowBase  # noqa
+from .item_knowbase import KnowBase  # noqa
+from .item_ticket import GlpiTicket  # noqa
+from .item_ticket import Ticket  # noqa
