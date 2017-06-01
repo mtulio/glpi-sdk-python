@@ -2,11 +2,13 @@ language: python
 sudo: false
 notifications:
   email: false
-python:
-- '2.7'
+env:
+  - TOXENV=py27
+  - TOXENV=py34
+  - TOXENV=py35
+  - TOXENV=py36
+  - TOXENV=flake8
 install:
-- make dependencies
-- pip install git+git://github.com/truly-systems/glpi-sdk-python.git#egg=glpi
-script:
-- make check-syntax
-- make test-setup
+  - pip install tox
+script: tox
+cahce: pip
