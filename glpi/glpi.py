@@ -375,6 +375,7 @@ class GLPI(object):
             "getFullSession": "getFullSession",
             "getActiveProfile": "getActiveProfile",
             "getMyProfiles": "getMyProfiles",
+            "location": "location",
         }
         self.api_rest = None
         self.api_session = None
