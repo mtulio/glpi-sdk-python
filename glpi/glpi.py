@@ -17,13 +17,18 @@
 
 from __future__ import print_function
 import os
+import sys
 import json as json_import
 import logging
 import requests
 from requests.structures import CaseInsensitiveDict
-from HTMLParser import HTMLParser
-
 from .version import __version__
+
+if sys.version_info[0] > 2:
+    from html.parser import HTMLParser
+else:
+    from HTMLParser import HTMLParser
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +99,7 @@ def _glpi_html_parser(content):
 
     html_parser = GlpiHTMLParser(content)
     return html_parser.get_data_clear()
+
 
 class GlpiException(Exception):
     pass
@@ -460,7 +466,7 @@ class GLPI(object):
                 item_name = item_name_real
             else:
                 _item_path = '/' + item_name
-                self.item_map.update({ item_name : _item_path})
+                self.item_map.update({item_name: _item_path})
 
         self.set_item(item_name)
         self.set_api_uri()
@@ -473,7 +479,7 @@ class GLPI(object):
 
         try:
             self.api_session = self.api_rest.get_session_token()
-        except GlpiException as e:
+        except GlpiException:
             raise
 
         if self.api_session is not None:
@@ -515,7 +521,6 @@ class GLPI(object):
 
         except GlpiException as e:
             return {'{}'.format(e)}
-
 
     def get(self, item_name, item_id=None):
         """ Get item_name and/with resource by ID """
@@ -640,8 +645,6 @@ class GLPI(object):
 
         except GlpiException as e:
             return {'{}'.format(e)}
-
-
 
     # [U]PDATE an Item
     def update(self, item_name, data):
