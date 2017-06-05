@@ -17,12 +17,18 @@
 
 from __future__ import print_function
 import os
+import sys
 import json as json_import
 import logging
 import requests
 from requests.structures import CaseInsensitiveDict
-
 from .version import __version__
+
+if sys.version_info[0] > 2:
+    from html.parser import HTMLParser
+else:
+    from HTMLParser import HTMLParser
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +62,45 @@ def _cleanup_param_values(dictionary):
     return dictionary
 
 
+def _glpi_html_parser(content):
+    """
+    Try to retrieve data tokens from HTML content.
+    It's useful to debug GLPI rest when it's not returning JSON responses. I.E:
+    when MYSQL server is down, API Rest answer html errors.
+    """
+    class GlpiHTMLParser(HTMLParser):
+        def __init__(self, content):
+            HTMLParser.__init__(self)
+            self.count = 0
+            self.data = []
+            self.feed(content)
+
+        def get_count(self):
+            return self.count
+
+        def get_data(self):
+            return self.data
+
+        def get_data_clear(self):
+            """ Get data tokens without comments '/' """
+            new_data = []
+            for r in self.get_data():
+                if r.startswith('/'):
+                    continue
+                new_data.append(r)
+            return new_data
+
+        def handle_data(self, data):
+            """ Get data tokens in HTML feed """
+            d = data.strip()
+            if d:
+                self.count += 1
+                self.data.append(d)
+
+    html_parser = GlpiHTMLParser(content)
+    return html_parser.get_data_clear()
+
+
 class GlpiException(Exception):
     pass
 
@@ -68,7 +113,7 @@ class GlpiService(object):
     """ Polymorphic class of GLPI REST API Service. """
     __version__ = __version__
 
-    def __init__(self, url_apirest, token_app, uri,
+    def __init__(self, url_apirest, token_app, uri=None,
                  username=None, password=None, token_auth=None,
                  use_vcap_services=False, vcap_services_name=None):
         """
@@ -169,10 +214,15 @@ class GlpiService(object):
                              auth=auth, headers=headers)
 
         try:
-            self.session = r.json()['session_token']
-            return True
-        except Exception as e:
-            raise GlpiException("Unable to init session in GLPI server: %s" % e)
+            if r.status_code == 200:
+                self.session = r.json()['session_token']
+                return True
+            else:
+                err = _glpi_html_parser(r.content)
+                raise GlpiException("Init session to GLPI server fails: %s" % err)
+        except Exception:
+            err = _glpi_html_parser(r.content)
+            raise GlpiException("ERROR when try to init session in GLPI server: %s" % err)
 
         return False
 
@@ -182,8 +232,12 @@ class GlpiService(object):
         if self.session is not None:
             return self.session
         else:
-            if self.set_session_token():
+            try:
+                self.set_session_token()
                 return self.session
+            except GlpiException:
+                raise
+
             else:
                 return 'Unable to get Session Token'
 
@@ -205,7 +259,6 @@ class GlpiService(object):
         """
 
         full_url = '%s/%s' % (self.url, url.strip('/'))
-
         input_headers = _remove_null_values(headers) if headers else {}
 
         headers = CaseInsensitiveDict(
@@ -218,8 +271,8 @@ class GlpiService(object):
             if self.session is None:
                 self.set_session_token()
             headers.update({'Session-Token': self.session})
-        except Exception as e:
-            raise GlpiException("Unable to get Session token. ERROR: %s" % e)
+        except GlpiException as e:
+            raise GlpiException("Unable to get Session token. ERROR: {}".format(e))
 
         if self.app_token is not None:
             headers.update({'App-Token': self.app_token})
@@ -388,7 +441,10 @@ class GLPI(object):
 
     def set_item(self, item_name):
         """ Define an item to object """
-        self.item_uri = self.item_map[item_name]
+        try:
+            self.item_uri = self.item_map[item_name]
+        except:
+            raise Exception('Key [{}] not found in Item MAP'.format(item_name))
 
     def set_item_map(self, item_map={}):
         """ Set an custom item_map. """
@@ -401,74 +457,98 @@ class GLPI(object):
         """
         self.api_rest.set_uri(self.item_uri)
 
+    def update_uri(self, item_name):
+        """ Avoid duplicate calls in every 'Item operators' """
+        if (item_name not in self.item_map):
+            if item_name.startswith('/'):
+                item_name_real = item_name.split('/')[1]
+                self.item_map.update({item_name_real: item_name})
+                item_name = item_name_real
+            else:
+                _item_path = '/' + item_name
+                self.item_map.update({item_name: _item_path})
+
+        self.set_item(item_name)
+        self.set_api_uri()
+
     def init_api(self):
         """ Initialize the API Rest connection """
-        if self.item_uri is None:
-            return {"message_error": "Please use set_item() before init API."}
 
         self.api_rest = GlpiService(self.url, self.app_token,
-                                    self.item_uri, token_auth=self.auth_token)
+                                    token_auth=self.auth_token)
 
-        self.api_session = self.api_rest.get_session_token()
+        try:
+            self.api_session = self.api_rest.get_session_token()
+        except GlpiException:
+            raise
 
         if self.api_session is not None:
             return {"session_token": self.api_session}
         else:
             return {"message_error": "Unable to InitSession in GLPI Server."}
 
-    def init_item(self, item_name):
-        """ Initialize an Item context. """
-        update_api = False
-
-        if self.item_uri != self.item_map[item_name]:
-            self.set_item(item_name)
-            update_api = True
-
-        if self.api_rest is None:
-            try:
-                self.init_api()
-            except:
-                logger.error("Unable to InitSession in GLPI Server.")
-                return False
-
-        if update_api:
-            self.set_api_uri()
+    def api_has_session(self):
+        """
+        Check if API has session cfg or if it is enalbed
+        """
+        if self.api_session is None:
+            return False
 
         return True
 
     # [C]REATE - Create an Item
     def create(self, item_name, item_data):
         """ Create an Resource Item """
-        if not self.init_item(item_name):
-            return {"message_error": "Unable to create an Item in GLPI Server"}
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        return self.api_rest.create(item_data)
+            self.update_uri(item_name)
+            return self.api_rest.create(item_data)
+
+        except GlpiException as e:
+            return {'{}'.format(e)}
 
     # [R]EAD - Retrieve Item data
     def get_all(self, item_name):
         """ Get all resources from item_name """
-        if not self.init_item(item_name):
-            return {"message_error": "Unable to get Item in GLPI Server."}
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        return self.api_rest.get_all()
+            self.update_uri(item_name)
+            return self.api_rest.get_all()
+
+        except GlpiException as e:
+            return {'{}'.format(e)}
 
     def get(self, item_name, item_id=None):
         """ Get item_name and/with resource by ID """
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        if not self.init_item(item_name):
-            return {"message_error": "Unable to get Item by ID in GLPI Server"}
+            self.update_uri(item_name)
 
-        if item_id is None:
-            return self.api_rest.get_path(item_name)
+            if item_id is None:
+                return self.api_rest.get_path(item_name)
 
-        return self.api_rest.get(item_id)
+            return self.api_rest.get(item_id)
+
+        except GlpiException as e:
+            return {'{}'.format(e)}
 
     def search_options(self, item_name):
         """ List GLPI APIRest Search Options """
-        if not self.init_item('listSearchOptions'):
-            return {"message_error": "Unable to create an Item in GLPI Server"}
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        return self.api_rest.search_options(item_name)
+            self.update_uri('listSearchOptions')
+            return self.api_rest.search_options(item_name)
+
+        except GlpiException as e:
+            return {'{}'.format(e)}
 
     def search_criteria(self, data, criteria):
         """ #TODO Search in data some criteria """
@@ -556,23 +636,38 @@ class GLPI(object):
             uri_query = uri_query + uri
             s_index += 1
 
-        if not self.init_item('search'):
-            return {"message_error": "Unable to search Item in GLPI Server"}
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        return self.api_rest.search_options(uri_query)
+            self.update_uri('search')
+            return self.api_rest.search_options(uri_query)
+
+        except GlpiException as e:
+            return {'{}'.format(e)}
 
     # [U]PDATE an Item
     def update(self, item_name, data):
         """ Update an Resource Item. Should have all the Item payload """
-        if not self.init_item(item_name):
-            return {"message_error": "Unable to init Item in GLPI Server."}
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        return self.api_rest.update(data)
+            self.update_uri(item_name)
+            return self.api_rest.update(data)
+
+        except GlpiException as e:
+            return {'{}'.format(e)}
 
     # [D]ELETE an Item
     def delete(self, item_name, item_id, force_purge=False):
         """ Delete an Resource Item. Should have all the Item payload """
-        if not self.init_item(item_name):
-            return {"message_error": "Unable to init Item in GLPI Server."}
+        try:
+            if not self.api_has_session():
+                self.init_api()
 
-        return self.api_rest.delete(item_id, force_purge=force_purge)
+            self.update_uri(item_name)
+            return self.api_rest.delete(item_id, force_purge=force_purge)
+
+        except GlpiException as e:
+            return {'{}'.format(e)}

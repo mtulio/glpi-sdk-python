@@ -66,7 +66,16 @@ Then import it in your script and create a `glpi` API connection:
   glpi = GLPI(url, token, (user, password))
   ```
 
-### Examples
+To usage the SDK, you just set the DBTM item that you want and get information from GLPI.
+
+The Item value must be valid, otherwise you will get the following error.
+
+```shell
+[
+    "ERROR_RESOURCE_NOT_FOUND_NOR_COMMONDBTM",
+    "resource not found or not an instance of CommonDBTM; view documentation in your browser at http://<GLPI_URL>/apirest.php/#ERROR_RESOURCE_NOT_FOUND_NOR_COMMONDBTM"
+]
+```
 
 ### Get all Tickets
 
@@ -112,6 +121,16 @@ Then import it in your script and create a `glpi` API connection:
   ```python
   print "Getting 'My' profile: "
   print json.dumps(glpi.get('getMyProfiles'),
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
+  ```
+
+### Location
+
+  ```python
+  print "Getting 'Locations': "
+  print json.dumps(glpi.get('location'),
                     indent=4,
                     separators=(',', ': '),
                     sort_keys=True)
