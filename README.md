@@ -66,56 +66,75 @@ Then import it in your script and create a `glpi` API connection:
   glpi = GLPI(url, token, (user, password))
   ```
 
-### Examples
+To usage the SDK, you just set the DBTM item that you want and get information from GLPI.
+
+The Item value must be valid, otherwise you will get the following error.
+
+```shell
+[
+    "ERROR_RESOURCE_NOT_FOUND_NOR_COMMONDBTM",
+    "resource not found or not an instance of CommonDBTM; view documentation in your browser at http://<GLPI_URL>/apirest.php/#ERROR_RESOURCE_NOT_FOUND_NOR_COMMONDBTM"
+]
+```
 
 ### Get all Tickets
 
-    ```python
-    print "Getting all Tickets: "
-    print json.dumps(glpi.get_all('ticket'),
-                      indent=4,
-                      separators=(',', ': '),
-                      sort_keys=True)
-    ```
+  ```python
+  print "Getting all Tickets: "
+  print json.dumps(glpi.get_all('ticket'),
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
+  ```
 
 ### Create an Ticket
 
-    ```python
+  ```python
 
-    ticket_payload = {
-      'name': 'New ticket from SDK',
-      'content': '>>>> Content of ticket created by SDK API <<<'
-    }
+  ticket_payload = {
+    'name': 'New ticket from SDK',
+    'content': '>>>> Content of ticket created by SDK API <<<'
+  }
 
-    ticket_dict = glpi.create('ticket', ticket_payload)
-    if isinstance(ticket_dict, dict):
-      print "The ticket request was sent. See results: "
+  ticket_dict = glpi.create('ticket', ticket_payload)
+  if isinstance(ticket_dict, dict):
+    print "The ticket request was sent. See results: "
 
-    print json.dumps(ticket_dict,
-                      indent=4,
-                      separators=(',', ': '),
-                      sort_keys=True)
-    ```
+  print json.dumps(ticket_dict,
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
+  ```
 
 ### Get ticket by ID
 
-    ```python
-    print "Getting Ticket with ID 1: "
-    print json.dumps(glpi.get('ticket', 1),
-                      indent=4,
-                      separators=(',', ': '),
-                      sort_keys=True)
-    ```
+  ```python
+  print "Getting Ticket with ID 1: "
+  print json.dumps(glpi.get('ticket', 1),
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
+  ```
 
 ### Profile information
 
-    ```python
-    print "Getting 'My' profile: "
-    print json.dumps(glpi.get('getMyProfiles'),
-                      indent=4,
-                      separators=(',', ': '),
-                      sort_keys=True)
-    ```
+  ```python
+  print "Getting 'My' profile: "
+  print json.dumps(glpi.get('getMyProfiles'),
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
+  ```
+
+### Location
+
+  ```python
+  print "Getting 'Locations': "
+  print json.dumps(glpi.get('location'),
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True)
+  ```
 
 ### Full example
 

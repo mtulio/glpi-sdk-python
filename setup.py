@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 from codecs import open
 from os import path
 
@@ -8,14 +8,17 @@ def readme():
     with open(path.join(here, 'README.md'), encoding='utf-8') as f:
         return f.read()
 
-exec (open('glpi/version.py').read())
+
+__version__ = None
+exec(open('glpi/version.py').read())
+
 
 setup(
     name='glpi',
     packages=["glpi"],
     version=__version__,
     description='GLPI API SDK',
-    #long_description=readme(),
+    # long_description=readme(),
     url='https://github.com/truly-systems/glpi-sdk-python',
     download_url='https://github.com/truly-systems/glpi-sdk-python/archive/%s.tar.gz' % __version__,
     author='Marco Tulio R Braga',

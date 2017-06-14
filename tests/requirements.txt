@@ -1,2 +1,0 @@
-pep8
-git+https://github.com/truly-systems/glpi-sdk-python.git@master#egg=glpi
