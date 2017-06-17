@@ -298,7 +298,6 @@ class GlpiService(object):
 
     def get_payload(self, data_json):
         """ Construct the payload for REST API from JSON data. """
-
         data_str = ""
         null_str = "<DEFAULT_NULL>"
         for k in data_json:
@@ -377,7 +376,7 @@ class GlpiService(object):
     def update(self, data):
         """ Update an object Item. """
 
-        payload = '{"input": { %s }}' % (self.get_payload(data))
+        payload = '{"input": { %s }}' % self.get_payload(data)
         new_url = "%s/%d" % (self.uri, data['id'])
 
         response = self.request('PUT', new_url, data=payload)
@@ -392,7 +391,7 @@ class GlpiService(object):
             return {"message_error": "Please define item_id to be deleted."}
 
         if force_purge:
-            payload = '{"input": { "id": %d } "force_purge": true}' % (item_id)
+            payload = '{"input": { "id": %d , "force_purge": true }}' % (item_id)
         else:
             payload = '{"input": { "id": %d }}' % (item_id)
 
